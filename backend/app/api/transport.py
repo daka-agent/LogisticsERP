@@ -279,6 +279,81 @@ def update_order_status(order_id):
     return success_response(order.to_dict(), '状态已更新')
 
 
+@bp.route('/orders/<int:order_id>/pod', methods=['POST'])
+@login_required
+def confirm_pod(order_id):
+    """POD签收确认"""
+    order = Order.query.get_or_404(order_id)
+
+    if order.status != 'arrived':
+        return error_response('订单未到达，不能确认POD')
+
+    data = request.get_json() or {}
+
+    order.pod_status = 'signed'
+    order.signee_name = data.get('signee_name', order.signee_name or '')
+    order.signee_phone = data.get('signee_phone', order.signee_phone or '')
+    order.pod_signed_at = datetime.utcnow()
+
+    # 处理POD图片上传（模拟）
+    if data.get('pod_image'):
+        order.pod_image = data['pod_image']
+
+    order.status = 'signed'
+    db.session.commit()
+
+    # 记录操作日志
+    log_operation(
+        user_id=current_user.id,
+        group_id=current_user.group_id,
+        module='transport_order',
+        action='pod_confirm',
+        target_type='Order',
+        target_id=order.id,
+        description=f'POD签收确认 {order.order_no}，签收人：{order.signee_name}'
+    )
+    db.session.commit()
+
+    # 评分 + 通知
+    score_operation(user_id=current_user.id, group_id=current_user.group_id,
+                    module='transport_order', action='pod_confirm')
+    broadcast_order_status('transport_order', order.id, 'signed', current_user.group_id)
+
+    return success_response(order.to_dict(), 'POD签收确认成功')
+
+
+@bp.route('/orders/<int:order_id>/complete', methods=['PUT'])
+@login_required
+def complete_order(order_id):
+    """完成订单（POD确认后）"""
+    order = Order.query.get_or_404(order_id)
+
+    if order.status != 'signed':
+        return error_response('订单未完成POD签收，不能完成')
+
+    order.status = 'completed'
+    db.session.commit()
+
+    # 记录操作日志
+    log_operation(
+        user_id=current_user.id,
+        group_id=current_user.group_id,
+        module='transport_order',
+        action='complete',
+        target_type='Order',
+        target_id=order.id,
+        description=f'完成运输订单 {order.order_no}'
+    )
+    db.session.commit()
+
+    # 评分 + 通知 + 自动生成应收
+    score_operation(user_id=current_user.id, group_id=current_user.group_id,
+                    module='transport_order', action='complete')
+    broadcast_order_status('transport_order', order.id, 'completed', current_user.group_id)
+
+    return success_response(order.to_dict(), '订单已完成')
+
+
 # ==================== 运输跟踪 ====================
 
 @bp.route('/transport-records', methods=['GET'])

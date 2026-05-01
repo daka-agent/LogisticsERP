@@ -10,6 +10,7 @@
         <el-step title="已调度" />
         <el-step title="运输中" />
         <el-step title="已到达" />
+        <el-step title="已签收" />
         <el-step title="已完成" />
       </el-steps>
     </el-card>
@@ -40,7 +41,8 @@
       <template #header><span>操作</span></template>
       <el-button v-if="order && order.status === 'dispatched'" type="primary" @click="addRecord('in_transit')">更新：正在运输</el-button>
       <el-button v-if="order && order.status === 'in_transit'" type="success" @click="addRecord('arrived')">更新：已到达</el-button>
-      <el-button v-if="order && order.status === 'arrived'" type="warning" @click="addRecord('signed')">更新：已签收</el-button>
+      <el-button v-if="order && order.status === 'arrived'" type="warning" @click="showPodDialog = true">POD 签收确认</el-button>
+      <el-button v-if="order && order.status === 'signed'" type="success" @click="completeOrder">完成订单</el-button>
       <el-button v-if="order" @click="viewFreight" style="margin-left:10px">查看运费</el-button>
     </el-card>
 
@@ -60,6 +62,26 @@
       </el-timeline>
       <el-empty v-else description="暂无跟踪记录" />
     </el-card>
+
+    <!-- POD 签收确认对话框 -->
+    <el-dialog v-model="showPodDialog" title="POD 签收确认" width="500px">
+      <el-form :model="podForm" label-width="100px">
+        <el-form-item label="签收人姓名" required>
+          <el-input v-model="podForm.signee_name" placeholder="请输入签收人姓名" />
+        </el-form-item>
+        <el-form-item label="签收人电话">
+          <el-input v-model="podForm.signee_phone" placeholder="请输入签收人电话" />
+        </el-form-item>
+        <el-form-item label="POD 图片">
+          <el-input v-model="podForm.pod_image" placeholder="模拟上传，输入图片路径" />
+          <div style="color:#909399;font-size:12px;margin-top:5px">教学模拟：直接输入图片文件名，如 pod001.jpg</div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showPodDialog = false">取消</el-button>
+        <el-button type="primary" @click="confirmPod">确认签收</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -74,9 +96,11 @@ const order = ref(null)
 const records = ref([])
 const loading = ref(false)
 const isMobile = ref(false)
+const showPodDialog = ref(false)
+const podForm = reactive({ signee_name: '', signee_phone: '', pod_image: '' })
 const checkWidth = () => { isMobile.value = window.innerWidth < 768 }
 
-const statusMap = ['pending','approved','dispatched','in_transit','arrived','completed']
+const statusMap = ['pending','approved','dispatched','in_transit','arrived','signed','completed']
 const stepIndex = computed(() => order.value ? statusMap.indexOf(order.value.status) : 0)
 
 const statusType = (s) => ({ pending:'warning', approved:'', dispatched:'', in_transit:'primary', arrived:'success', signed:'', completed:'success', cancelled:'info' }[s]||'info')
@@ -115,6 +139,33 @@ const viewFreight = async () => {
     const f = res.data.data
     ElMessage.info(`计算运费: ¥${f.calculated_freight}（重量${f.weight}kg x ¥0.005 + 体积${f.volume}m³ x ¥100）`)
   }
+}
+
+const confirmPod = async () => {
+  if (!podForm.signee_name) { ElMessage.warning('请输入签收人姓名'); return }
+  try {
+    const res = await orderAPI.confirmPod(route.params.id, podForm)
+    if (res.data.code === 200) {
+      ElMessage.success('POD签收确认成功')
+      showPodDialog.value = false
+      loadData()
+    } else {
+      ElMessage.error(res.data.message)
+    }
+  } catch (e) { ElMessage.error('操作失败') }
+}
+
+const completeOrder = async () => {
+  try {
+    await ElMessageBox.confirm('确认完成该订单？完成后将生成应收款项。', '完成订单', { type: 'warning' })
+    const res = await orderAPI.complete(route.params.id)
+    if (res.data.code === 200) {
+      ElMessage.success('订单已完成')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message)
+    }
+  } catch (e) { if (e !== 'cancel') ElMessage.error('操作失败') }
 }
 
 onMounted(() => { checkWidth(); window.addEventListener('resize', checkWidth); loadData() })

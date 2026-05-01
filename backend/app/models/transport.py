@@ -26,6 +26,9 @@ class Order(BaseModel):
     actual_arrival = db.Column(db.DateTime)
     signee_name = db.Column(db.String(64))
     signee_phone = db.Column(db.String(20))
+    pod_image = db.Column(db.String(256))  # POD图片路径
+    pod_status = db.Column(db.String(20), default='pending')  # pending/signed/exception
+    pod_signed_at = db.Column(db.DateTime)  # 签收时间
     remark = db.Column(db.String(512))
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
     operator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -63,6 +66,9 @@ class Order(BaseModel):
             'actual_arrival': self.actual_arrival.isoformat() if self.actual_arrival else None,
             'signee_name': self.signee_name,
             'signee_phone': self.signee_phone,
+            'pod_status': self.pod_status,
+            'pod_image': self.pod_image,
+            'pod_signed_at': self.pod_signed_at.isoformat() if self.pod_signed_at else None,
             'remark': self.remark,
             'group_id': self.group_id,
             'operator_id': self.operator_id,
