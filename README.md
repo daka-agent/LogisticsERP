@@ -545,7 +545,7 @@ npm install
 
 - **作者**：大卡 (daka-agent)
 - **GitHub**：[@daka-agent](https://github.com/daka-agent)
-- **Email**：（请替换为您的邮箱）
+- **Email**：（zhangdaka@gdufe.edu.cn）
 
 ---
 
