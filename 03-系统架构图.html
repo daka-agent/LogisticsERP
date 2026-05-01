@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物流教学软件 - 系统架构图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Microsoft YaHei', sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 10px; font-size: 24px; color: #1a1a2e; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 30px; font-size: 14px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* Tab navigation */
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+  .tab { padding: 8px 20px; border: 2px solid #409EFF; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s; background: white; color: #409EFF; }
+  .tab:hover, .tab.active { background: #409EFF; color: white; }
+
+  /* Architecture diagram */
+  .arch-section { background: white; border-radius: 12px; padding: 30px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); display: none; }
+  .arch-section.active { display: block; }
+  .arch-title { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #1a1a2e; border-left: 4px solid #409EFF; padding-left: 12px; }
+
+  /* Layer boxes */
+  .layer { border: 2px solid #e0e6ed; border-radius: 10px; padding: 20px; margin-bottom: 16px; position: relative; }
+  .layer-label { position: absolute; top: -12px; left: 16px; background: white; padding: 0 10px; font-size: 13px; font-weight: bold; color: #666; }
+  .layer-content { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; align-items: stretch; }
+
+  .module { background: linear-gradient(135deg, #f5f7fa, #e8ecf1); border-radius: 8px; padding: 16px; min-width: 180px; flex: 1; text-align: center; border: 1px solid #dcdfe6; transition: transform 0.3s, box-shadow 0.3s; }
+  .module:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .module-icon { font-size: 28px; margin-bottom: 8px; }
+  .module-name { font-size: 14px; font-weight: bold; color: #303133; margin-bottom: 4px; }
+  .module-desc { font-size: 12px; color: #909399; line-height: 1.4; }
+
+  .module.blue { background: linear-gradient(135deg, #ecf5ff, #d9ecff); border-color: #b3d8ff; }
+  .module.green { background: linear-gradient(135deg, #f0f9eb, #e1f3d8); border-color: #c2e7b0; }
+  .module.orange { background: linear-gradient(135deg, #fdf6ec, #faecd8); border-color: #f5dab1; }
+  .module.purple { background: linear-gradient(135deg, #f4f0ff, #e9e3ff); border-color: #d3cce8; }
+  .module.red { background: linear-gradient(135deg, #fef0f0, #fde2e2); border-color: #fbc4c4; }
+  .module.teal { background: linear-gradient(135deg, #e8f8f5, #d1f2eb); border-color: #a3e4d7; }
+
+  /* Arrow connector */
+  .arrow { text-align: center; font-size: 24px; color: #409EFF; padding: 8px 0; }
+  .arrow-double { text-align: center; padding: 8px 0; }
+  .arrow-double span { display: inline-block; padding: 4px 20px; background: #409EFF; color: white; border-radius: 20px; font-size: 12px; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 0; padding: 20px 0; }
+  .flow-step { display: flex; flex-direction: column; align-items: center; min-width: 110px; }
+  .flow-box { width: 100px; height: 60px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; text-align: center; padding: 4px; line-height: 1.3; }
+  .flow-role { font-size: 11px; color: #666; margin-top: 4px; }
+  .flow-arrow { font-size: 18px; color: #409EFF; margin: 0 4px; align-self: center; padding-bottom: 20px; }
+
+  .flow-box.p1 { background: linear-gradient(135deg, #409EFF, #66b1ff); }
+  .flow-box.p2 { background: linear-gradient(135deg, #67C23A, #85ce61); }
+  .flow-box.p3 { background: linear-gradient(135deg, #E6A23C, #ebb563); }
+  .flow-box.p4 { background: linear-gradient(135deg, #F56C6C, #f78989); }
+  .flow-box.p5 { background: linear-gradient(135deg, #909399, #a6a9ad); }
+  .flow-box.purchase { background: linear-gradient(135deg, #b37feb, #d3adf7); }
+
+  /* Tech stack cards */
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .tech-card { background: white; border: 1px solid #e0e6ed; border-radius: 8px; padding: 16px; text-align: center; }
+  .tech-card .name { font-size: 16px; font-weight: bold; color: #303133; margin: 8px 0 4px; }
+  .tech-card .desc { font-size: 12px; color: #909399; }
+  .tech-card .version { display: inline-block; padding: 2px 8px; background: #ecf5ff; color: #409EFF; border-radius: 10px; font-size: 11px; margin-top: 6px; }
+
+  /* ER diagram simplified */
+  .er-container { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+  .er-table { border: 2px solid #409EFF; border-radius: 8px; min-width: 160px; background: white; overflow: hidden; }
+  .er-header { background: #409EFF; color: white; padding: 8px 12px; font-size: 13px; font-weight: bold; }
+  .er-fields { padding: 8px; }
+  .er-field { font-size: 11px; padding: 3px 0; color: #606266; border-bottom: 1px dashed #ebeef5; display: flex; justify-content: space-between; }
+  .er-field:last-child { border-bottom: none; }
+  .er-pk { color: #F56C6C; font-weight: bold; }
+  .er-fk { color: #E6A23C; }
+
+  /* Data flow */
+  .data-flow { background: #fafbfc; border-radius: 8px; padding: 20px; border: 1px solid #e0e6ed; }
+  .df-step { display: flex; align-items: flex-start; margin-bottom: 16px; }
+  .df-num { width: 28px; height: 28px; border-radius: 50%; background: #409EFF; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; flex-shrink: 0; margin-right: 12px; margin-top: 2px; }
+  .df-content { flex: 1; }
+  .df-title { font-size: 14px; font-weight: bold; color: #303133; margin-bottom: 4px; }
+  .df-desc { font-size: 12px; color: #909399; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>物流教学软件 - 系统架构设计</h1>
+  <p class="subtitle">Logistics Teaching Platform Architecture v1.0 | 2026-05-01</p>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showSection('overall')">整体架构</div>
+    <div class="tab" onclick="showSection('tech')">技术栈</div>
+    <div class="tab" onclick="showSection('purchase-flow')">采购流程</div>
+    <div class="tab" onclick="showSection('transport-flow')">运输流程</div>
+    <div class="tab" onclick="showSection('warehouse-flow')">仓储流程</div>
+    <div class="tab" onclick="showSection('multiplayer')">多人协作</div>
+    <div class="tab" onclick="showSection('database')">数据模型</div>
+    <div class="tab" onclick="showSection('dataflow')">数据流</div>
+  </div>
+
+  <!-- 整体架构 -->
+  <div id="overall" class="arch-section active">
+    <div class="arch-title">系统整体架构（三层架构）</div>
+    <div class="layer">
+      <span class="layer-label">前端展示层 (Browser)</span>
+      <div class="layer-content">
+        <div class="module blue">
+          <div class="module-icon">👤</div>
+          <div class="module-name">学生端 - 单人模式</div>
+          <div class="module-desc">全角色操作<br>流程引导 + 评分</div>
+        </div>
+        <div class="module green">
+          <div class="module-icon">👥</div>
+          <div class="module-name">学生端 - 多人协作</div>
+          <div class="module-desc">角色分工<br>实时通信 + 看板</div>
+        </div>
+        <div class="module orange">
+          <div class="module-icon">👨‍🏫</div>
+          <div class="module-name">教师后台</div>
+          <div class="module-desc">场景管理<br>进度监控 + 评分</div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow">
+      <span class="arrow-double"><span>HTTP REST API + WebSocket (Socket.IO)</span></span>
+    </div>
+    <div class="layer">
+      <span class="layer-label">后端业务层 (Python Flask)</span>
+      <div class="layer-content">
+        <div class="module purple">
+          <div class="module-icon">🔧</div>
+          <div class="module-name">REST API</div>
+          <div class="module-desc">CRUD 接口<br>RESTful 设计</div>
+        </div>
+        <div class="module teal">
+          <div class="module-icon">🔌</div>
+          <div class="module-name">WebSocket 服务</div>
+          <div class="module-desc">Flask-SocketIO<br>实时消息广播</div>
+        </div>
+        <div class="module blue">
+          <div class="module-icon">⚙️</div>
+          <div class="module-name">业务逻辑层</div>
+          <div class="module-desc">Service 封装<br>评分引擎</div>
+        </div>
+        <div class="module green">
+          <div class="module-icon">🔐</div>
+          <div class="module-name">认证授权</div>
+          <div class="module-desc">Flask-Login<br>RBAC 权限</div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow">
+      <span class="arrow-double"><span>SQLAlchemy ORM</span></span>
+    </div>
+    <div class="layer">
+      <span class="layer-label">数据存储层</span>
+      <div class="layer-content">
+        <div class="module orange">
+          <div class="module-icon">🗄️</div>
+          <div class="module-name">SQLite / MySQL</div>
+          <div class="module-desc">业务数据存储<br>开发/生产双模式</div>
+        </div>
+        <div class="module red">
+          <div class="module-icon">📝</div>
+          <div class="module-name">操作日志</div>
+          <div class="module-desc">全程操作记录<br>用于回放和评分</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技术栈 -->
+  <div id="tech" class="arch-section">
+    <div class="arch-title">技术栈详情</div>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div style="font-size:32px">🟢</div>
+        <div class="name">Vue 3</div>
+        <div class="desc">前端框架，组合式 API，组件化开发</div>
+        <span class="version">v3.4+</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">⚡</div>
+        <div class="name">Vite</div>
+        <div class="desc">前端构建工具，极速热更新</div>
+        <span class="version">v5.x</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">🎨</div>
+        <div class="name">Element Plus</div>
+        <div class="desc">UI 组件库，中后台方案</div>
+        <span class="version">v2.x</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">📊</div>
+        <div class="name">ECharts</div>
+        <div class="desc">数据可视化图表库</div>
+        <span class="version">v5.x</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">🐍</div>
+        <div class="name">Python Flask</div>
+        <div class="desc">后端 Web 框架，轻量高效</div>
+        <span class="version">v3.x</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">📐</div>
+        <div class="name">SQLAlchemy</div>
+        <div class="desc">Python ORM，支持多数据库</div>
+        <span class="version">v2.x</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">🔌</div>
+        <div class="name">Flask-SocketIO</div>
+        <div class="desc">WebSocket 实时通信</div>
+        <span class="version">v5.x</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">🗄️</div>
+        <div class="name">SQLite / MySQL</div>
+        <div class="desc">关系型数据库，开发/生产</div>
+        <span class="version">SQLite3 / MySQL 8</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">🐳</div>
+        <div class="name">Docker</div>
+        <div class="desc">容器化部署，一键启动</div>
+        <span class="version">v24+</span>
+      </div>
+      <div class="tech-card">
+        <div style="font-size:32px">📦</div>
+        <div class="name">Pinia</div>
+        <div class="desc">Vue 状态管理</div>
+        <span class="version">v2.x</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 采购流程 -->
+  <div id="purchase-flow" class="arch-section">
+    <div class="arch-title">采购管理业务流程</div>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-box purchase">采购申请</div>
+        <div class="flow-role">采购专员</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box p5">审批</div>
+        <div class="flow-role">教师/管理员</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box purchase">选择供应商</div>
+        <div class="flow-role">采购专员</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box purchase">采购订单</div>
+        <div class="flow-role">采购专员</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box p2">到货验收</div>
+        <div class="flow-role">仓库管理员</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box p2">上架入库</div>
+        <div class="flow-role">仓库管理员</div>
+      </div>
+    </div>
+    <div class="data-flow" style="margin-top:20px;">
+      <div class="df-step">
+        <div class="df-num">1</div>
+        <div class="df-content">
+          <div class="df-title">采购申请创建</div>
+          <div class="df-desc">采购专员填写采购需求（商品、数量、预算），系统生成采购申请单（状态：待审批）。库存低于预警阈值时可自动触发采购申请建议。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">2</div>
+        <div class="df-content">
+          <div class="df-title">采购审批</div>
+          <div class="df-desc">教师（或系统管理员）审核申请，可同意或驳回。审批通过后，申请单进入「待下单」状态。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">3</div>
+        <div class="df-content">
+          <div class="df-title">生成采购订单</div>
+          <div class="df-desc">采购专员选择供应商，确认价格和数量，生成正式采购订单（状态：已确认）。订单同步通知仓库做好收货准备。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">4</div>
+        <div class="df-content">
+          <div class="df-title">到货验收</div>
+          <div class="df-desc">货物到达后，仓库管理员进行数量核对和质量检查。验收合格则自动生成入库单，不合格则触发退货流程。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">5</div>
+        <div class="df-content">
+          <div class="df-title">入库上架</div>
+          <div class="df-desc">系统推荐可用货位，仓库管理员确认上架。入库完成后库存自动增加，并记录库存变动流水。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 运输流程 -->
+  <div id="transport-flow" class="arch-section">
+    <div class="arch-title">运输管理业务流程</div>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-box p1">订单录入</div>
+        <div class="flow-role">客服</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box p1">订单审核</div>
+        <div class="flow-role">调度员</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box p3">车辆调度</div>
+        <div class="flow-role">调度员</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box p4">运输执行</div>
+        <div class="flow-role">司机</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box p2">客户签收</div>
+        <div class="flow-role">客服确认</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-box p5">运费结算</div>
+        <div class="flow-role">系统自动</div>
+      </div>
+    </div>
+    <div class="data-flow" style="margin-top:20px;">
+      <div class="df-step">
+        <div class="df-num">1</div>
+        <div class="df-content">
+          <div class="df-title">客户下单</div>
+          <div class="df-desc">客服录入客户的运输需求，包括发货地、目的地、货物信息（名称、重量、体积、件数）。系统生成运输订单号。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">2</div>
+        <div class="df-content">
+          <div class="df-title">调度审核与车辆分配</div>
+          <div class="df-desc">调度员审核订单信息，根据货物类型和数量匹配车型，选择空闲司机，规划运输路线。系统自动计算预估运费。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">3</div>
+        <div class="df-content">
+          <div class="df-title">司机执行运输</div>
+          <div class="df-desc">司机确认接单后开始运输，可模拟更新位置和状态（发车→途中→到达）。多人模式下通过 WebSocket 实时同步状态。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">4</div>
+        <div class="df-content">
+          <div class="df-title">签收与结算</div>
+          <div class="df-desc">到达目的地后客户签收确认，系统自动计算运费。订单完成，车辆和司机状态恢复为可用。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 仓储流程 -->
+  <div id="warehouse-flow" class="arch-section">
+    <div class="arch-title">仓储管理业务流程</div>
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:300px;">
+        <div style="background:#ecf5ff; padding:12px; border-radius:8px; font-weight:bold; margin-bottom:12px; text-align:center;">入库流程</div>
+        <div class="flow" style="flex-direction:column; align-items:center;">
+          <div class="flow-step">
+            <div class="flow-box p1">入库通知</div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="flow-box p3">预约入库</div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="flow-box p3">实物验收</div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="flow-box p2">推荐货位</div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="flow-box p2">确认上架</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:300px;">
+        <div style="background:#fdf6ec; padding:12px; border-radius:8px; font-weight:bold; margin-bottom:12px; text-align:center;">出库流程</div>
+        <div class="flow" style="flex-direction:column; align-items:center;">
+          <div class="flow-step">
+            <div class="flow-box p1">出库通知</div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="flow-box p3">生成出库单</div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="flow-box p3">拣货</div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="flow-box p2">打包复核</div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">
+            <div class="flow-box p2">发货确认</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 多人协作 -->
+  <div id="multiplayer" class="arch-section">
+    <div class="arch-title">多人协作模式架构</div>
+    <div class="layer" style="border-color:#409EFF;">
+      <span class="layer-label" style="color:#409EFF;">教师端</span>
+      <div class="layer-content">
+        <div class="module orange">
+          <div class="module-icon">🎭</div>
+          <div class="module-name">场景管理</div>
+          <div class="module-desc">创建/选择教学场景<br>设置难度和事件</div>
+        </div>
+        <div class="module orange">
+          <div class="module-icon">📡</div>
+          <div class="module-name">实时监控</div>
+          <div class="module-desc">查看各组进度<br>各角色操作状态</div>
+        </div>
+        <div class="module orange">
+          <div class="module-icon">⚡</div>
+          <div class="module-name">事件注入</div>
+          <div class="module-desc">突发车辆故障<br>供应商延迟等</div>
+        </div>
+        <div class="module orange">
+          <div class="module-icon">📝</div>
+          <div class="module-name">评分统计</div>
+          <div class="module-desc">自动评分 + 导出<br>操作日志回放</div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow">
+      <span class="arrow-double"><span>Flask-SocketIO (WebSocket)</span></span>
+    </div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+      <div style="flex:1; min-width:150px; max-width:180px;">
+        <div class="layer" style="border-color:#b37feb; text-align:center;">
+          <span class="layer-label" style="color:#b37feb;">采购专员</span>
+          <div style="padding:10px 0; font-size:12px; color:#606266;">采购申请<br>供应商管理<br>到货跟踪</div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:150px; max-width:180px;">
+        <div class="layer" style="border-color:#409EFF; text-align:center;">
+          <span class="layer-label" style="color:#409EFF;">客服</span>
+          <div style="padding:10px 0; font-size:12px; color:#606266;">录入订单<br>客户沟通<br>签收确认</div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:150px; max-width:180px;">
+        <div class="layer" style="border-color:#E6A23C; text-align:center;">
+          <span class="layer-label" style="color:#E6A23C;">调度员</span>
+          <div style="padding:10px 0; font-size:12px; color:#606266;">审核订单<br>车辆调度<br>路线规划</div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:150px; max-width:180px;">
+        <div class="layer" style="border-color:#67C23A; text-align:center;">
+          <span class="layer-label" style="color:#67C23A;">仓库管理员</span>
+          <div style="padding:10px 0; font-size:12px; color:#606266;">入库验收<br>出库拣货<br>库存盘点</div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:150px; max-width:180px;">
+        <div class="layer" style="border-color:#F56C6C; text-align:center;">
+          <span class="layer-label" style="color:#F56C6C;">司机</span>
+          <div style="padding:10px 0; font-size:12px; color:#606266;">确认接单<br>运输执行<br>上传签收</div>
+        </div>
+      </div>
+    </div>
+    <div class="data-flow" style="margin-top:20px;">
+      <div class="df-step">
+        <div class="df-num">1</div>
+        <div class="df-content">
+          <div class="df-title">教师创建房间</div>
+          <div class="df-desc">教师选择教学场景，创建协作房间。系统生成房间号，学生通过房间号加入。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">2</div>
+        <div class="df-content">
+          <div class="df-title">学生选择角色加入</div>
+          <div class="df-desc">学生输入房间号，选择角色（每人一个角色）。所有角色就位后，教师点击「开始」。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">3</div>
+        <div class="df-content">
+          <div class="df-title">订单实时流转</div>
+          <div class="df-desc">当某角色完成操作后，订单自动流转到下一个角色，并通过 WebSocket 推送待办通知。所有同组学生实时看到订单状态变化。</div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">4</div>
+        <div class="df-content">
+          <div class="df-title">教师注入事件</div>
+          <div class="df-desc">教师可在任意时刻注入突发事件（如车辆故障），考验学生应急处理。事件通过 WebSocket 推送到对应角色。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据模型 -->
+  <div id="database" class="arch-section">
+    <div class="arch-title">核心数据模型（ER 图）</div>
+    <div class="er-container">
+      <div class="er-table">
+        <div class="er-header">users 用户表</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>username</span><span>VARCHAR(64)</span></div>
+          <div class="er-field"><span>real_name</span><span>VARCHAR(64)</span></div>
+          <div class="er-field"><span class="er-fk">role_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">group_id FK</span><span>INTEGER</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">purchase_requests 采购申请</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>req_no</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span class="er-fk">applicant_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">goods_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>status</span><span>VARCHAR(16)</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">purchase_orders 采购订单</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>po_no</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span class="er-fk">request_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">supplier_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>status</span><span>VARCHAR(16)</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">orders 运输订单</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>order_no</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span class="er-fk">customer_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">vehicle_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">driver_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>status</span><span>VARCHAR(16)</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">inventory 库存</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">warehouse_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">location_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">goods_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>quantity</span><span>INTEGER</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">inbound_orders 入库单</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>order_no</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span class="er-fk">warehouse_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>source_type</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span>status</span><span>VARCHAR(16)</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">outbound_orders 出库单</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>order_no</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span class="er-fk">warehouse_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>dest_type</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span>status</span><span>VARCHAR(16)</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">goods 商品表</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>sku</span><span>VARCHAR(64)</span></div>
+          <div class="er-field"><span>name</span><span>VARCHAR(128)</span></div>
+          <div class="er-field"><span>unit</span><span>VARCHAR(16)</span></div>
+          <div class="er-field"><span>min_stock</span><span>INTEGER</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">warehouses 仓库表</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>name</span><span>VARCHAR(64)</span></div>
+          <div class="er-field"><span>address</span><span>VARCHAR(256)</span></div>
+          <div class="er-field"><span>type</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span>status</span><span>VARCHAR(16)</span></div>
+        </div>
+      </div>
+      <div class="er-table">
+        <div class="er-header">operation_logs 操作日志</div>
+        <div class="er-fields">
+          <div class="er-field"><span class="er-pk">id PK</span><span>INTEGER</span></div>
+          <div class="er-field"><span class="er-fk">user_id FK</span><span>INTEGER</span></div>
+          <div class="er-field"><span>action</span><span>VARCHAR(64)</span></div>
+          <div class="er-field"><span>module</span><span>VARCHAR(32)</span></div>
+          <div class="er-field"><span>created_at</span><span>DATETIME</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据流 -->
+  <div id="dataflow" class="arch-section">
+    <div class="arch-title">核心数据流向</div>
+    <div class="data-flow">
+      <div class="df-step">
+        <div class="df-num">1</div>
+        <div class="df-content">
+          <div class="df-title">采购 → 库存</div>
+          <div class="df-desc">
+            <b>写入链路：</b>purchase_requests → purchase_orders → purchase_receipts → inbound_orders → inbound_items → inventory + inventory_transactions<br>
+            <b>业务含义：</b>采购到货验收通过后，系统自动创建入库单，上架后库存增加并记录流水。
+          </div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">2</div>
+        <div class="df-content">
+          <div class="df-title">订单 → 运输 → 签收</div>
+          <div class="df-desc">
+            <b>写入链路：</b>orders → transport_records (状态流转记录)<br>
+            <b>业务含义：</b>客户下单后，订单经过审核→调度→运输→签收，每个环节都记录运输跟踪状态。
+          </div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">3</div>
+        <div class="df-content">
+          <div class="df-title">出库 → 库存扣减</div>
+          <div class="df-desc">
+            <b>写入链路：</b>outbound_orders → outbound_items → inventory (扣减) + inventory_transactions<br>
+            <b>业务含义：</b>出库拣货确认后，对应货位库存扣减，并记录变动流水。
+          </div>
+        </div>
+      </div>
+      <div class="df-step">
+        <div class="df-num">4</div>
+        <div class="df-content">
+          <div class="df-title">操作 → 日志 → 评分</div>
+          <div class="df-desc">
+            <b>写入链路：</b>任何业务操作 → operation_logs (实时记录) → scores (定时/手动触发评分)<br>
+            <b>业务含义：</b>所有用户操作自动记录到操作日志，评分引擎根据操作日志计算学生成绩。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.arch-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
