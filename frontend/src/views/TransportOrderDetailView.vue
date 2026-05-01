@@ -43,6 +43,7 @@
       <el-button v-if="order && order.status === 'in_transit'" type="success" @click="addRecord('arrived')">更新：已到达</el-button>
       <el-button v-if="order && order.status === 'arrived'" type="warning" @click="showPodDialog = true">POD 签收确认</el-button>
       <el-button v-if="order && order.status === 'signed'" type="success" @click="completeOrder">完成订单</el-button>
+      <el-button v-if="order && ['dispatched','in_transit','arrived'].includes(order.status)" type="danger" @click="showExceptionDialog = true">登记异常</el-button>
       <el-button v-if="order" @click="viewFreight" style="margin-left:10px">查看运费</el-button>
     </el-card>
 
@@ -61,6 +62,46 @@
         </el-timeline-item>
       </el-timeline>
       <el-empty v-else description="暂无跟踪记录" />
+    </el-card>
+
+    <!-- 异常记录列表 -->
+    <el-card style="margin-top:20px">
+      <template #header>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span>运输异常记录</span>
+          <el-button v-if="order && ['dispatched','in_transit','arrived'].includes(order.status)" 
+                     type="danger" size="small" @click="showExceptionDialog = true">登记异常</el-button>
+        </div>
+      </template>
+      <el-table :data="exceptions" style="width:100%" v-if="exceptions.length">
+        <el-table-column prop="exception_type" label="异常类型" width="100">
+          <template #default="{row}">
+            <el-tag :type="exceptionTypeTag(row.exception_type)">{{ exceptionTypeLabel(row.exception_type) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="severity" label="严重程度" width="90">
+          <template #default="{row}">
+            <el-tag :type="severityTag(row.severity)">{{ severityLabel(row.severity) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" label="异常描述" />
+        <el-table-column prop="location" label="地点" width="150" />
+        <el-table-column prop="handle_status" label="处理状态" width="100">
+          <template #default="{row}">
+            <el-tag :type="handleStatusTag(row.handle_status)">{{ handleStatusLabel(row.handle_status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reported_at" label="登记时间" width="160" />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{row}">
+            <el-button v-if="row.handle_status === 'pending'" type="primary" size="small" 
+                       @click="openHandleDialog(row)">处理</el-button>
+            <el-button v-if="row.handle_status === 'pending'" type="danger" size="small" 
+                       @click="deleteException(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-empty v-else description="暂无异常记录" />
     </el-card>
 
     <!-- POD 签收确认对话框 -->
@@ -82,22 +123,86 @@
         <el-button type="primary" @click="confirmPod">确认签收</el-button>
       </template>
     </el-dialog>
+
+    <!-- 异常登记对话框 -->
+    <el-dialog v-model="showExceptionDialog" title="登记运输异常" width="500px">
+      <el-form :model="exceptionForm" label-width="100px">
+        <el-form-item label="异常类型" required>
+          <el-select v-model="exceptionForm.exception_type" placeholder="请选择异常类型" style="width:100%">
+            <el-option label="货物破损" value="damage" />
+            <el-option label="运输延误" value="delay" />
+            <el-option label="货物丢失" value="loss" />
+            <el-option label="客户拒收" value="reject" />
+            <el-option label="交通事故" value="accident" />
+            <el-option label="车辆故障" value="breakdown" />
+            <el-option label="其他异常" value="other" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="严重程度">
+          <el-select v-model="exceptionForm.severity" placeholder="请选择严重程度" style="width:100%">
+            <el-option label="轻微" value="low" />
+            <el-option label="一般" value="normal" />
+            <el-option label="严重" value="high" />
+            <el-option label="重大" value="critical" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="异常地点">
+          <el-input v-model="exceptionForm.location" placeholder="请输入异常发生地点" />
+        </el-form-item>
+        <el-form-item label="异常描述" required>
+          <el-input v-model="exceptionForm.description" type="textarea" :rows="3" placeholder="请详细描述异常情况" />
+        </el-form-item>
+        <el-form-item label="异常照片">
+          <el-input v-model="exceptionForm.image" placeholder="模拟上传，输入图片路径" />
+          <div style="color:#909399;font-size:12px;margin-top:5px">教学模拟：直接输入图片文件名，如 exception001.jpg</div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showExceptionDialog = false">取消</el-button>
+        <el-button type="primary" @click="createException">确认登记</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 异常处理对话框 -->
+    <el-dialog v-model="showHandleDialog" title="处理运输异常" width="500px">
+      <el-form :model="handleForm" label-width="100px">
+        <el-form-item label="处理状态" required>
+          <el-select v-model="handleForm.handle_status" placeholder="请选择处理状态" style="width:100%">
+            <el-option label="处理中" value="processing" />
+            <el-option label="已解决" value="resolved" />
+            <el-option label="关闭" value="closed" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="处理备注">
+          <el-input v-model="handleForm.handle_note" type="textarea" :rows="3" placeholder="请输入处理备注" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showHandleDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleException">确认处理</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { orderAPI, transportRecordAPI } from '../api/index'
+import { orderAPI, transportRecordAPI, exceptionAPI } from '../api/index'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const order = ref(null)
 const records = ref([])
+const exceptions = ref([])
 const loading = ref(false)
 const isMobile = ref(false)
 const showPodDialog = ref(false)
+const showExceptionDialog = ref(false)
+const showHandleDialog = ref(false)
 const podForm = reactive({ signee_name: '', signee_phone: '', pod_image: '' })
+const exceptionForm = reactive({ exception_type: '', severity: 'normal', location: '', description: '', image: '' })
+const handleForm = reactive({ id: null, handle_status: 'processing', handle_note: '' })
 const checkWidth = () => { isMobile.value = window.innerWidth < 768 }
 
 const statusMap = ['pending','approved','dispatched','in_transit','arrived','signed','completed']
@@ -107,15 +212,29 @@ const statusType = (s) => ({ pending:'warning', approved:'', dispatched:'', in_t
 const statusLabel = (s) => ({ pending:'待审核', approved:'已审核', dispatched:'已调度', in_transit:'运输中', arrived:'已到达', signed:'已签收', completed:'已完成', cancelled:'已取消' }[s]||s)
 const timelineType = (s) => ({ departed:'primary', in_transit:'primary', arrived:'success', signed:'success' }[s]||'info')
 
+// 异常类型映射
+const exceptionTypeLabel = (t) => ({ damage:'货物破损', delay:'运输延误', loss:'货物丢失', reject:'客户拒收', accident:'交通事故', breakdown:'车辆故障', other:'其他' }[t]||t)
+const exceptionTypeTag = (t) => ({ damage:'warning', delay:'', loss:'danger', reject:'warning', accident:'danger', breakdown:'', other:'' }[t]||'info')
+
+// 严重程度映射
+const severityLabel = (s) => ({ low:'轻微', normal:'一般', high:'严重', critical:'重大' }[s]||s)
+const severityTag = (s) => ({ low:'success', normal:'', high:'warning', critical:'danger' }[s]||'info')
+
+// 处理状态映射
+const handleStatusLabel = (s) => ({ pending:'待处理', processing:'处理中', resolved:'已解决', closed:'已关闭' }[s]||s)
+const handleStatusTag = (s) => ({ pending:'warning', processing:'primary', resolved:'success', closed:'info' }[s]||'info')
+
 const loadData = async () => {
   loading.value = true
   const id = route.params.id
-  const [r1, r2] = await Promise.all([
+  const [r1, r2, r3] = await Promise.all([
     orderAPI.get(id),
-    transportRecordAPI.list({ order_id: id })
+    transportRecordAPI.list({ order_id: id }),
+    exceptionAPI.list({ order_id: id })
   ])
   if (r1.data.code === 200) order.value = r1.data.data
   if (r2.data.code === 200) records.value = r2.data.data
+  if (r3.data.code === 200) exceptions.value = r3.data.data
   loading.value = false
 }
 
@@ -161,6 +280,72 @@ const completeOrder = async () => {
     const res = await orderAPI.complete(route.params.id)
     if (res.data.code === 200) {
       ElMessage.success('订单已完成')
+      loadData()
+    } else {
+      ElMessage.error(res.data.message)
+    }
+  } catch (e) { if (e !== 'cancel') ElMessage.error('操作失败') }
+}
+
+// 异常相关函数
+const createException = async () => {
+  if (!exceptionForm.exception_type || !exceptionForm.description) {
+    ElMessage.warning('请选择异常类型并填写描述')
+    return
+  }
+  try {
+    const res = await exceptionAPI.create({
+      order_id: route.params.id,
+      ...exceptionForm
+    })
+    if (res.data.code === 200) {
+      ElMessage.success('异常登记成功')
+      showExceptionDialog.value = false
+      exceptionForm.exception_type = ''
+      exceptionForm.severity = 'normal'
+      exceptionForm.location = ''
+      exceptionForm.description = ''
+      exceptionForm.image = ''
+      loadData()
+    } else {
+      ElMessage.error(res.data.message)
+    }
+  } catch (e) { ElMessage.error('操作失败') }
+}
+
+const openHandleDialog = (row) => {
+  handleForm.id = row.id
+  handleForm.handle_status = 'processing'
+  handleForm.handle_note = ''
+  showHandleDialog.value = true
+}
+
+const handleException = async () => {
+  if (!handleForm.handle_status) {
+    ElMessage.warning('请选择处理状态')
+    return
+  }
+  try {
+    const res = await exceptionAPI.update(handleForm.id, {
+      handle_status: handleForm.handle_status,
+      handle_note: handleForm.handle_note
+    })
+    if (res.data.code === 200) {
+      ElMessage.success('异常处理状态已更新')
+      showHandleDialog.value = false
+      loadData()
+    } else {
+      ElMessage.error(res.data.message)
+    }
+  } catch (e) { ElMessage.error('操作失败') }
+}
+
+const deleteException = async (id) => {
+  try {
+    await ElMessageBox.confirm('确认删除该异常记录？', '删除确认', { type: 'warning' })
+    const res = await exceptionAPI.delete(id)
+    if (res.data.code === 200) {
+      ElMessage.success('删除成功')
       loadData()
     } else {
       ElMessage.error(res.data.message)

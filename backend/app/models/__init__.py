@@ -9,7 +9,7 @@ from app.models.goods import Goods, Category
 from app.models.warehouse import Warehouse, Zone, Location
 from app.models.teaching import TeachingScene
 from app.models.purchase import PurchaseRequest, PurchaseOrder, PurchaseOrderItem, PurchaseReceipt
-from app.models.transport import Order, TransportRecord
+from app.models.transport import Order, TransportRecord, TransportException
 from app.models.inbound import InboundOrder, InboundItem
 from app.models.stock import OutboundOrder, OutboundItem, Inventory, StockMove, StockCount, StockCountItem
 from app.models.collab import OperationLog, Score
@@ -22,7 +22,7 @@ __all__ = [
     'Goods', 'Category', 'Warehouse', 'Zone', 'Location',
     'TeachingScene',
     'PurchaseRequest', 'PurchaseOrder', 'PurchaseOrderItem', 'PurchaseReceipt',
-    'Order', 'TransportRecord',
+    'Order', 'TransportRecord', 'TransportException',
     'InboundOrder', 'InboundItem',
     'OutboundOrder', 'OutboundItem', 'Inventory', 'StockMove', 'StockCount', 'StockCountItem',
     'OperationLog', 'Score',

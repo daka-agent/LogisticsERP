@@ -454,3 +454,153 @@ def get_freight(order_id):
         'calculated_freight': round(freight, 2),
         'recorded_freight': float(order.freight_amount) if order.freight_amount else None
     })
+
+
+# ==================== 运输异常 ====================
+
+@bp.route('/exceptions', methods=['GET'])
+@login_required
+def get_exceptions():
+    """获取运输异常列表"""
+    order_id = request.args.get('order_id')
+    handle_status = request.args.get('handle_status')
+    exception_type = request.args.get('exception_type')
+
+    query = TransportException.query
+
+    if order_id:
+        query = query.filter_by(order_id=int(order_id))
+    if handle_status:
+        query = query.filter_by(handle_status=handle_status)
+    if exception_type:
+        query = query.filter_by(exception_type=exception_type)
+
+    exceptions = query.order_by(TransportException.reported_at.desc()).all()
+    return success_response([e.to_dict() for e in exceptions])
+
+
+@bp.route('/exceptions', methods=['POST'])
+@login_required
+def create_exception():
+    """登记运输异常"""
+    data = request.get_json()
+
+    if not data or not data.get('order_id') or not data.get('exception_type') or not data.get('description'):
+        return error_response('订单ID、异常类型和描述不能为空')
+
+    order = Order.query.get(data['order_id'])
+    if not order:
+        return error_response('订单不存在')
+
+    exception = TransportException(
+        order_id=order.id,
+        exception_type=data['exception_type'],
+        severity=data.get('severity', 'normal'),
+        location=data.get('location', ''),
+        description=data['description'],
+        image=data.get('image', ''),
+        reported_by=current_user.id,
+        handle_status='pending'
+    )
+
+    db.session.add(exception)
+    db.session.commit()
+
+    # 记录操作日志
+    log_operation(
+        user_id=current_user.id,
+        group_id=current_user.group_id,
+        module='transport_exception',
+        action='create',
+        target_type='TransportException',
+        target_id=exception.id,
+        description=f'登记运输异常：{exception.exception_type} - {order.order_no}'
+    )
+    db.session.commit()
+
+    # 评分
+    score_operation(user_id=current_user.id, group_id=current_user.group_id,
+                   module='transport_exception', action='create')
+
+    return success_response(exception.to_dict(), '异常登记成功')
+
+
+@bp.route('/exceptions/<int:exception_id>', methods=['GET'])
+@login_required
+def get_exception(exception_id):
+    """获取异常详情"""
+    exception = TransportException.query.get_or_404(exception_id)
+    return success_response(exception.to_dict())
+
+
+@bp.route('/exceptions/<int:exception_id>', methods=['PUT'])
+@login_required
+def update_exception(exception_id):
+    """更新异常处理状态"""
+    exception = TransportException.query.get_or_404(exception_id)
+    data = request.get_json() or {}
+
+    # 更新处理状态
+    if 'handle_status' in data:
+        old_status = exception.handle_status
+        exception.handle_status = data['handle_status']
+        if data['handle_status'] == 'resolved' and not exception.handled_at:
+            exception.handled_at = datetime.utcnow()
+            exception.handled_by = current_user.id
+
+    if 'handle_note' in data:
+        exception.handle_note = data['handle_note']
+
+    if 'severity' in data:
+        exception.severity = data['severity']
+
+    if 'image' in data:
+        exception.image = data['image']
+
+    db.session.commit()
+
+    # 记录操作日志
+    log_operation(
+        user_id=current_user.id,
+        group_id=current_user.group_id,
+        module='transport_exception',
+        action='update',
+        target_type='TransportException',
+        target_id=exception.id,
+        description=f'更新异常处理状态：{exception.handle_status}'
+    )
+    db.session.commit()
+
+    # 评分
+    score_operation(user_id=current_user.id, group_id=current_user.group_id,
+                   module='transport_exception', action='update')
+
+    return success_response(exception.to_dict(), '异常处理状态已更新')
+
+
+@bp.route('/exceptions/<int:exception_id>', methods=['DELETE'])
+@login_required
+def delete_exception(exception_id):
+    """删除异常记录"""
+    exception = TransportException.query.get_or_404(exception_id)
+
+    # 只能删除待处理的异常
+    if exception.handle_status != 'pending':
+        return error_response('只能删除待处理的异常')
+
+    db.session.delete(exception)
+    db.session.commit()
+
+    # 记录操作日志
+    log_operation(
+        user_id=current_user.id,
+        group_id=current_user.group_id,
+        module='transport_exception',
+        action='delete',
+        target_type='TransportException',
+        target_id=exception.id,
+        description=f'删除异常记录'
+    )
+    db.session.commit()
+
+    return success_response(message='删除成功')

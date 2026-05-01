@@ -105,3 +105,50 @@ class TransportRecord(BaseModel):
             'recorded_at': self.recorded_at.isoformat() if self.recorded_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+
+class TransportException(BaseModel):
+    """运输异常记录表"""
+    __tablename__ = 'transport_exceptions'
+
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
+    exception_type = db.Column(db.String(32), nullable=False)
+    # damage:破损, delay:延误, loss:丢失, reject:拒收, accident:事故, breakdown:故障, other:其他
+    severity = db.Column(db.String(16), default='normal')
+    # low:轻微, normal:一般, high:严重, critical:重大
+    location = db.Column(db.String(256))
+    description = db.Column(db.String(512), nullable=False)
+    image = db.Column(db.String(256))  # 异常照片路径
+    reported_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reported_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    handle_status = db.Column(db.String(16), default='pending')
+    # pending:待处理, processing:处理中, resolved:已解决, closed:已关闭
+    handle_note = db.Column(db.String(512))
+    handled_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    handled_at = db.Column(db.DateTime)
+
+    # 关系
+    order = db.relationship('Order', backref='exceptions')
+    reporter = db.relationship('User', foreign_keys=[reported_by], backref='reported_exceptions')
+    handler = db.relationship('User', foreign_keys=[handled_by], backref='handled_exceptions')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'order_id': self.order_id,
+            'order_no': self.order.order_no if self.order else None,
+            'exception_type': self.exception_type,
+            'severity': self.severity,
+            'location': self.location,
+            'description': self.description,
+            'image': self.image,
+            'reported_by': self.reported_by,
+            'reporter_name': self.reporter.real_name if self.reporter else None,
+            'reported_at': self.reported_at.isoformat() if self.reported_at else None,
+            'handle_status': self.handle_status,
+            'handle_note': self.handle_note,
+            'handled_by': self.handled_by,
+            'handler_name': self.handler.real_name if self.handler else None,
+            'handled_at': self.handled_at.isoformat() if self.handled_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }

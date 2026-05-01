@@ -55,6 +55,14 @@ export const transportRecordAPI = {
   create: (data) => axios.post('/transport-records', data)
 }
 
+export const exceptionAPI = {
+  list: (params) => axios.get('/exceptions', { params }),
+  get: (id) => axios.get(`/exceptions/${id}`),
+  create: (data) => axios.post('/exceptions', data),
+  update: (id, data) => axios.put(`/exceptions/${id}`, data),
+  delete: (id) => axios.delete(`/exceptions/${id}`)
+}
+
 // 仓库/库区/货位
 export const warehouseAPI = {
   ...crudApi('warehouses'),

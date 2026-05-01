@@ -55,6 +55,11 @@ SCORING_RULES = {
         'create_transport': 10,       # 创建运输合同
         'approve_transport': 5,       # 审批运输合同
         'terminate': 5,              # 终止合同
+    },
+    'transport_exception': {
+        'create': 10,              # 登记运输异常
+        'update': 5,               # 更新异常处理状态
+        'delete': -5,              # 删除异常（扣分）
     }
 }
 
