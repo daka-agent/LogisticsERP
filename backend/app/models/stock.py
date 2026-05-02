@@ -95,6 +95,8 @@ class Inventory(BaseModel):
     quantity = db.Column(db.Integer, default=0)
     available_qty = db.Column(db.Integer, default=0)  # 可用数量
     reserved_qty = db.Column(db.Integer, default=0)  # 预留数量
+    safety_stock = db.Column(db.Integer, default=0, comment='安全库存')
+    min_stock = db.Column(db.Integer, default=0, comment='最小库存')
     status = db.Column(db.String(16), default='normal')  # normal/locked/expired
 
     # 关系
@@ -118,6 +120,8 @@ class Inventory(BaseModel):
             'quantity': self.quantity,
             'available_qty': self.available_qty,
             'reserved_qty': self.reserved_qty,
+            'safety_stock': self.safety_stock,
+            'min_stock': self.min_stock,
             'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

@@ -97,7 +97,7 @@ const checkWidth = () => {
 // 获取总览数据
 const fetchOverview = async () => {
   try {
-    const response = await axios.get('/api/reports/overview')
+    const response = await axios.get('/reports/overview')
     if (response.data.code === 200) {
       const data = response.data.data
       overviewData.value = [
@@ -116,7 +116,7 @@ const fetchOverview = async () => {
 // 初始化库存周转率折线图
 const initTurnoverChart = async () => {
   try {
-    const response = await axios.get('/api/reports/inventory-turnover')
+    const response = await axios.get('/reports/inventory-turnover')
     if (response.data.code === 200) {
       const { months, turnover_rates } = response.data.data
 
@@ -166,7 +166,7 @@ const initTurnoverChart = async () => {
 // 初始化采购成本对比柱状图
 const initCostChart = async () => {
   try {
-    const response = await axios.get('/api/reports/procurement-cost')
+    const response = await axios.get('/reports/procurement-cost')
     if (response.data.code === 200) {
       const { suppliers, costs } = response.data.data
 
@@ -216,7 +216,7 @@ const initCostChart = async () => {
 // 初始化运输准时率饼图
 const initOntimeChart = async () => {
   try {
-    const response = await axios.get('/api/reports/transport-ontime')
+    const response = await axios.get('/reports/transport-ontime')
     if (response.data.code === 200) {
       const { ontime_rate, delayed_rate } = response.data.data
 
@@ -260,7 +260,7 @@ const initOntimeChart = async () => {
 // 初始化仓库利用率雷达图
 const initUtilizationChart = async () => {
   try {
-    const response = await axios.get('/api/reports/warehouse-utilization')
+    const response = await axios.get('/reports/warehouse-utilization')
     if (response.data.code === 200) {
       const { warehouses, utilization_rates } = response.data.data
 

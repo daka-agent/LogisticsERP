@@ -74,6 +74,12 @@ def create_app(config_class=Config):
     from app.api.contracts import bp as contracts_bp
     app.register_blueprint(contracts_bp)
 
+    from app.api.customers import bp as customers_bp
+    app.register_blueprint(customers_bp, url_prefix='/api')
+
+    from app.api.alerts import bp as alerts_bp
+    app.register_blueprint(alerts_bp, url_prefix='/api')
+
     # 启动时自动初始化预设教学场景（若不存在）
     try:
         from app.api.teaching import init_preset_scenes

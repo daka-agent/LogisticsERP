@@ -60,6 +60,11 @@ SCORING_RULES = {
         'create': 10,              # 登记运输异常
         'update': 5,               # 更新异常处理状态
         'delete': -5,              # 删除异常（扣分）
+    },
+    'customer': {
+        'create': 10,              # 创建客户
+        'update': 5,               # 更新客户信息
+        'delete': -5,              # 删除客户（扣分）
     }
 }
 

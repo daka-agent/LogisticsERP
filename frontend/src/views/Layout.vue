@@ -90,6 +90,11 @@
           <el-menu-item index="/teacher/scores">成绩统计</el-menu-item>
           <el-menu-item index="/teacher/logs">操作日志</el-menu-item>
         </el-sub-menu>
+
+        <el-menu-item index="/alerts">
+          <el-icon><Bell /></el-icon>
+          <template #title>⚠️ 预警中心</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -116,11 +121,16 @@
           <h3>物流教学软件</h3>
         </div>
         <div class="header-right">
+          <el-badge :value="alertCount" :hidden="alertCount === 0" :max="99">
+            <el-icon class="bell-btn" @click="goToAlerts">
+              <Bell />
+            </el-icon>
+          </el-badge>
           <el-tag size="small" v-if="!isMobile && authStore.user?.role_name" type="info">
             {{ authStore.user.role_name }}
           </el-tag>
           <span v-if="!isMobile">{{ authStore.user?.real_name }}</span>
-          <el-button type="text" @click="handleLogout">
+          <el-button link @click="handleLogout">
             {{ isMobile ? '退出' : '退出登录' }}
           </el-button>
         </div>
@@ -138,7 +148,12 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { ElMessageBox } from 'element-plus'
-import { HomeFilled, Folder, ShoppingCart, Van, Box, Goods, User, Setting, DataAnalysis, Fold, Expand, Menu, Money, Document } from '@element-plus/icons-vue'
+import {
+  HomeFilled, Folder, ShoppingCart, Van, Box, Goods,
+  User, Setting, DataAnalysis, Fold, Expand, Menu,
+  Money, Document, Bell
+} from '@element-plus/icons-vue'
+import { alertAPI } from '../api/alert'
 
 const route = useRoute()
 const router = useRouter()
@@ -151,6 +166,10 @@ const isAdmin = computed(() => ['admin', 'teacher'].includes(authStore.user?.rol
 const isMobile = ref(false)
 const isCollapse = ref(false)
 const sidebarOpen = ref(false)
+
+// 预警数量
+const alertCount = ref(0)
+let alertTimer = null
 
 const checkScreenWidth = () => {
   isMobile.value = window.innerWidth < 768
@@ -166,13 +185,31 @@ const onMenuSelect = () => {
   }
 }
 
+const fetchAlertCount = async () => {
+  try {
+    const res = await alertAPI.getCount()
+    if (res.data.code === 200) {
+      alertCount.value = res.data.data.total
+    }
+  } catch {
+    // 静默失败
+  }
+}
+
+const goToAlerts = () => {
+  router.push('/alerts')
+}
+
 onMounted(() => {
   checkScreenWidth()
   window.addEventListener('resize', checkScreenWidth)
+  fetchAlertCount()
+  alertTimer = setInterval(fetchAlertCount, 5 * 60 * 1000)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreenWidth)
+  if (alertTimer) clearInterval(alertTimer)
 })
 
 const handleLogout = async () => {
@@ -227,6 +264,16 @@ const handleLogout = async () => {
   align-items: center;
   gap: 15px;
   white-space: nowrap;
+}
+
+.bell-btn {
+  font-size: 20px;
+  cursor: pointer;
+  color: #606266;
+}
+
+.bell-btn:hover {
+  color: #409EFF;
 }
 
 .el-aside {

@@ -49,6 +49,8 @@ const routes = [
       { path: 'teacher/events', name: 'EventInject', component: () => import('../views/teacher/EventInjectView.vue') },
       { path: 'teacher/scores', name: 'ScoreManage', component: () => import('../views/teacher/ScoreManageView.vue') },
       { path: 'teacher/logs', name: 'OperationLog', component: () => import('../views/teacher/OperationLogView.vue') },
+      // 预警中心
+      { path: 'alerts', name: 'Alerts', component: () => import('../views/AlertView.vue') },
     ]
   }
 ]

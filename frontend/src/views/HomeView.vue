@@ -73,6 +73,32 @@
       </el-col>
     </el-row>
 
+    <!-- 预警提醒 -->
+    <el-row :gutter="isMobile ? 10 : 20" class="content-row">
+      <el-col :xs="24">
+        <el-card class="section-card">
+          <template #header>
+            <div class="card-header">
+              <span>⚡ 预警提醒</span>
+              <el-tag v-if="alertTotal > 0" type="danger" size="small">{{ alertTotal }}</el-tag>
+              <el-button text size="small" @click="router.push('/alerts')" v-if="alertTotal > 0">查看全部</el-button>
+            </div>
+          </template>
+          <el-empty v-if="alertTotal === 0" description="暂无预警" :image-size="60" />
+          <el-row v-else :gutter="16">
+            <el-col :span="4" v-for="item in alertSummary" :key="item.type">
+              <div class="alert-summary-item" @click="router.push('/alerts#' + item.type)">
+                <el-badge :value="item.count" :max="99" :type="item.count > 0 ? 'danger' : 'info'">
+                  <el-icon :size="22" :color="item.color"><component :is="item.icon" /></el-icon>
+                </el-badge>
+                <div class="alert-label">{{ item.label }}</div>
+              </div>
+            </el-col>
+          </el-row>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <!-- 近期动态 -->
     <el-row :gutter="isMobile ? 10 : 20" class="content-row">
       <el-col :xs="24">
@@ -141,9 +167,11 @@ import { ElMessage } from 'element-plus'
 import {
   ShoppingCart, Van, House, Box, DataLine,
   User, Clock, Refresh,
-  Document, OfficeBuilding, Finished
+  Document, OfficeBuilding, Finished,
+  Bell, Warning, CircleCheck
 } from '@element-plus/icons-vue'
 import axios from 'axios'
+import { alertAPI } from '../api/alert'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -241,6 +269,72 @@ const myTasks = ref([])
 // 近期动态
 const recentActivities = ref([])
 
+// 预警摘要
+const alertTotal = ref(0)
+const alertSummary = ref([
+  {
+    type: 'inventory',
+    label: '库存预警',
+    count: 0,
+    icon: Warning,
+    color: '#F56C6C',
+  },
+  {
+    type: 'expiry',
+    label: '有效期',
+    count: 0,
+    icon: Clock,
+    color: '#E6A23C',
+  },
+  {
+    type: 'payable',
+    label: '应付账款',
+    count: 0,
+    icon: Document,
+    color: '#F56C6C',
+  },
+  {
+    type: 'receivable',
+    label: '应收账款',
+    count: 0,
+    icon: Document,
+    color: '#F56C6C',
+  },
+  {
+    type: 'transport',
+    label: '运输超时',
+    count: 0,
+    icon: Van,
+    color: '#F56C6C',
+  },
+  {
+    type: 'contract',
+    label: '合同到期',
+    count: 0,
+    icon: Document,
+    color: '#E6A23C',
+  },
+])
+
+const loadAlerts = async () => {
+  try {
+    const res = await alertAPI.list()
+    if (res.data.code === 200) {
+      const data = res.data.data || {}
+      alertTotal.value = res.data.total || 0
+      const s = alertSummary.value
+      s[0].count = (data.inventory || []).length
+      s[1].count = (data.expiry || []).length
+      s[2].count = (data.payable || []).length
+      s[3].count = (data.receivable || []).length
+      s[4].count = (data.transport || []).length
+      s[5].count = (data.contract || []).length
+    }
+  } catch {
+    // 静默失败
+  }
+}
+
 // 模块状态
 const moduleStatus = computed(() => [
   {
@@ -308,7 +402,7 @@ const moduleStatus = computed(() => [
 // 获取数据
 const fetchStats = async () => {
   try {
-    const res = await axios.get('/api/dashboard/stats')
+    const res = await axios.get('/dashboard/stats')
     if (res.data.code === 200) {
       stats.value = res.data.data
     }
@@ -319,7 +413,7 @@ const fetchStats = async () => {
 
 const fetchMyTasks = async () => {
   try {
-    const res = await axios.get('/api/dashboard/my-tasks')
+    const res = await axios.get('/dashboard/my-tasks')
     if (res.data.code === 200) {
       myTasks.value = res.data.data
     }
@@ -330,7 +424,7 @@ const fetchMyTasks = async () => {
 
 const fetchRecentActivities = async () => {
   try {
-    const res = await axios.get('/api/dashboard/recent-activities?limit=8')
+    const res = await axios.get('/dashboard/recent-activities?limit=8')
     if (res.data.code === 200) {
       recentActivities.value = res.data.data
     }
@@ -340,7 +434,7 @@ const fetchRecentActivities = async () => {
 }
 
 const refreshData = async () => {
-  await Promise.all([fetchStats(), fetchMyTasks(), fetchRecentActivities()])
+  await Promise.all([fetchStats(), fetchMyTasks(), fetchRecentActivities(), loadAlerts()])
   ElMessage.success('数据已刷新')
 }
 
@@ -550,6 +644,25 @@ onUnmounted(() => { window.removeEventListener('resize', checkWidth) })
   color: #303133;
 }
 .task-time {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 预警摘要 */
+.alert-summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.alert-summary-item:hover {
+  background: #F5F7FA;
+}
+.alert-label {
   font-size: 12px;
   color: #909399;
 }

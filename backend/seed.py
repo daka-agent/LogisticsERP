@@ -91,17 +91,17 @@ with app.app_context():
 
     # ===== 4. 客户 =====
     customers_data = [
-        ('优品零售集团', '陈经理', '021-8888-1001', '上海市静安区南京路1266号', 'vip'),
-        ('恒通电子科技', '林总', '0755-8888-2002', '深圳市南山区科技园大厦', 'good'),
-        ('绿源食品加工厂', '吴主管', '0571-8888-3003', '杭州市余杭区食品工业园', 'normal'),
-        ('金达建材有限公司', '郑经理', '023-8888-4004', '重庆市九龙坡区建材城B栋', 'normal'),
-        ('宝康医药连锁', '黄采购', '020-8888-5005', '广州市越秀区医药广场3层', 'good'),
+        ('CUS-20260101001', '优品零售集团', '陈经理', '021-8888-1001', '上海市静安区南京路1266号', 'vip'),
+        ('CUS-20260101002', '恒通电子科技', '林总', '0755-8888-2002', '深圳市南山区科技园大厦', 'normal'),
+        ('CUS-20260101003', '绿源食品加工厂', '吴主管', '0571-8888-3003', '杭州市余杭区食品工业园', 'normal'),
+        ('CUS-20260101004', '金达建材有限公司', '郑经理', '023-8888-4004', '重庆市九龙坡区建材城B栋', 'normal'),
+        ('CUS-20260101005', '宝康医药连锁', '黄采购', '020-8888-5005', '广州市越秀区医药广场3层', 'vip'),
     ]
 
-    for name, contact, phone, address, credit in customers_data:
+    for customer_no, name, contact_person, phone, address, level in customers_data:
         if not Customer.query.filter_by(name=name).first():
-            c = Customer(name=name, contact=contact, phone=phone,
-                         address=address, credit_level=credit)
+            c = Customer(customer_no=customer_no, name=name, contact_person=contact_person,
+                         phone=phone, address=address, level=level)
             db.session.add(c)
             print(f"创建客户: {name}")
 
