@@ -10,6 +10,7 @@ from app.socket import broadcast_order_status
 from app.api.logs import log_operation
 from app.utils.scoring import score_operation
 from datetime import datetime, date
+from decimal import Decimal
 
 bp = Blueprint('transport', __name__)
 
@@ -332,7 +333,33 @@ def complete_order(order_id):
         return error_response('订单未完成POD签收，不能完成')
 
     order.status = 'completed'
+
+    # ① 释放车辆：恢复为空闲
+    if order.vehicle_id:
+        vehicle = Vehicle.query.get(order.vehicle_id)
+        if vehicle:
+            vehicle.status = 'idle'
+
+    # ② 释放司机：恢复为可用
+    if order.driver_id:
+        driver = Driver.query.get(order.driver_id)
+        if driver:
+            driver.status = 'available'
+
+    # ③ 自动计算并写入运费（若尚未设置）
+    if not order.freight_amount or order.freight_amount == 0:
+        freight = Decimal('0')
+        if order.weight:
+            freight += Decimal(str(order.weight)) * Decimal('5')     # 5元/千克
+        if order.volume:
+            freight += Decimal(str(order.volume)) * Decimal('100')   # 100元/立方米
+        if freight > 0:
+            order.freight_amount = freight
+
     db.session.commit()
+
+    # ④ 自动生成应收账款（幂等：已存在则跳过）
+    _auto_create_receivable(order)
 
     # 记录操作日志
     log_operation(
@@ -342,16 +369,73 @@ def complete_order(order_id):
         action='complete',
         target_type='Order',
         target_id=order.id,
-        description=f'完成运输订单 {order.order_no}'
+        description=f'完成运输订单 {order.order_no}，运费 {order.freight_amount} 元，车辆/司机已释放'
     )
     db.session.commit()
 
-    # 评分 + 通知 + 自动生成应收
+    # 评分 + 通知
     score_operation(user_id=current_user.id, group_id=current_user.group_id,
                     module='transport_order', action='complete')
     broadcast_order_status('transport_order', order.id, 'completed', current_user.group_id)
 
-    return success_response(order.to_dict(), '订单已完成')
+    return success_response(order.to_dict(), '订单已完成，运费已计算，应收账款已生成')
+
+
+def _auto_create_receivable(order):
+    """订单完成时自动生成应收账款（幂等）"""
+    try:
+        from app.models.finance import AccountsReceivable
+        from app.api.finance import generate_receivable_no
+
+        # 已有则跳过
+        if AccountsReceivable.query.filter_by(order_id=order.id).first():
+            return
+
+        total_amount = float(order.freight_amount) if order.freight_amount else 0
+        if total_amount <= 0:
+            return
+
+        group_id = None
+        try:
+            if hasattr(current_user, 'group_id'):
+                group_id = current_user.group_id
+        except Exception:
+            pass
+
+        receivable = AccountsReceivable(
+            receivable_no=generate_receivable_no(),
+            order_id=order.id,
+            customer_id=order.customer_id,
+            total_amount=total_amount,
+            received_amount=0,
+            remaining_amount=total_amount,
+            status='pending',
+            operator_id=current_user.id,
+            group_id=group_id
+        )
+        db.session.add(receivable)
+        db.session.commit()
+
+        log_operation(
+            user_id=current_user.id,
+            group_id=group_id,
+            module='finance',
+            action='create_receivable',
+            target_type='AccountsReceivable',
+            target_id=receivable.id,
+            description=f'[自动] 运输订单 {order.order_no} 完成，生成应收账款 {receivable.receivable_no}，金额 {total_amount}'
+        )
+        score_operation(
+            user_id=current_user.id,
+            group_id=group_id,
+            module='finance',
+            action='create_receivable',
+            extra_data={'description': f'自动生成应收账款 {receivable.receivable_no}'}
+        )
+    except Exception as e:
+        # 自动生成失败不影响订单完成流程，只记录日志
+        import traceback
+        print(f'[WARN] 自动生成应收账款失败: {e}\n{traceback.format_exc()}')
 
 
 # ==================== 运输跟踪 ====================
