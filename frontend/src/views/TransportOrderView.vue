@@ -69,14 +69,22 @@
     <el-dialog v-model="dispatchDialogVisible" title="车辆调度" width="500px">
       <el-form :model="dispatchForm" label-width="80px">
         <el-form-item label="选择车辆" required>
-          <el-select v-model="dispatchForm.vehicle_id" placeholder="空闲车辆" style="width:100%">
-            <el-option v-for="v in vehicleList" :key="v.id" :label="v.plate_no + ' (' + v.type + ')' " :value="v.id" />
+          <el-select v-model="dispatchForm.vehicle_id" placeholder="请选择空闲车辆" style="width:100%"
+            :no-data-text="'暂无空闲车辆'">
+            <el-option v-for="v in vehicleList" :key="v.id"
+              :label="v.plate_no + ' (' + v.type + '，载重' + v.capacity_weight + 't)'"
+              :value="v.id" />
           </el-select>
+          <div v-if="vehicleList.length === 0" style="color:#f56c6c;font-size:12px;margin-top:4px">当前无空闲车辆</div>
         </el-form-item>
         <el-form-item label="选择司机" required>
-          <el-select v-model="dispatchForm.driver_id" placeholder="可用司机" style="width:100%">
-            <el-option v-for="d in driverList" :key="d.id" :label="d.name + ' (' + (d.phone||'') + ')' " :value="d.id" />
+          <el-select v-model="dispatchForm.driver_id" placeholder="请选择可用司机" style="width:100%"
+            :no-data-text="'暂无可用司机'">
+            <el-option v-for="d in driverList" :key="d.id"
+              :label="d.name + ' (' + (d.phone||'') + '，' + (d.license_type||'') + ')'"
+              :value="d.id" />
           </el-select>
+          <div v-if="driverList.length === 0" style="color:#f56c6c;font-size:12px;margin-top:4px">当前无可用司机</div>
         </el-form-item>
         <el-form-item label="计划发车"><el-date-picker v-model="dispatchForm.plan_departure" type="datetime" style="width:100%" value-format="YYYY-MM-DD HH:mm" /></el-form-item>
         <el-form-item label="计划到达"><el-date-picker v-model="dispatchForm.plan_arrival" type="datetime" style="width:100%" value-format="YYYY-MM-DD HH:mm" /></el-form-item>
@@ -125,8 +133,16 @@ const loadData = async () => {
 }
 
 const loadOptions = async () => {
-  const [r1,r2,r3] = await Promise.all([customerAPI.list(), vehicleAPI.list(), driverAPI.list()])
+  const r1 = await customerAPI.list()
   if (r1.data.code === 200) customerList.value = r1.data.data
+}
+
+// 打开调度弹窗时实时加载空闲车辆和可用司机
+const loadDispatchOptions = async () => {
+  const [r2, r3] = await Promise.all([
+    vehicleAPI.list({ status: 'idle' }),
+    driverAPI.list({ status: 'available' })
+  ])
   if (r2.data.code === 200) vehicleList.value = r2.data.data
   if (r3.data.code === 200) driverList.value = r3.data.data
 }
@@ -155,10 +171,13 @@ const handleApprove = async (row) => {
   if (res.data.code === 200) { ElMessage.success('审核通过'); loadData() }
 }
 
-const showDispatchDialog = (row) => {
+const showDispatchDialog = async (row) => {
   currentOrderId.value = row.id
   dispatchForm.value = { vehicle_id:null, driver_id:null, plan_departure:'', plan_arrival:'' }
+  vehicleList.value = []
+  driverList.value = []
   dispatchDialogVisible.value = true
+  await loadDispatchOptions()
 }
 
 const handleDispatch = async () => {
