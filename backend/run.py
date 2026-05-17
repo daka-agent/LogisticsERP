@@ -5,12 +5,15 @@ from app import create_app, socketio
 app = create_app()
 
 if __name__ == '__main__':
-    print("="*50)
-    print("物流教学软件后端服务")
-    print("="*50)
-    print(f"调试模式: {app.config.get('DEBUG', False)}")
-    print(f"数据库: {app.config.get('SQLALCHEMY_DATABASE_URI', 'N/A')}")
-    print("="*50)
+    print("="*55)
+    print("  大卡@物流系统模拟仿真 — 后端服务")
+    print("="*55)
+    print(f"  调试模式  : {app.config.get('DEBUG', False)}")
+    print(f"  访问地址  : http://localhost:5000")
+    print(f"  前端地址  : http://localhost:5173")
+    print("="*55)
+    print("  提示：首次启动将自动初始化账号和基础数据，无需手动配置")
+    print("="*55)
     
     # 使用 SocketIO 启动（支持 WebSocket）
     socketio.run(
