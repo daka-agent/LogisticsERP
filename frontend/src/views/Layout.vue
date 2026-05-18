@@ -98,7 +98,12 @@
 
         <el-menu-item index="/alerts">
           <el-icon><Bell /></el-icon>
-          <template #title>⚠️ 预警中心</template>
+          <template #title>预警中心</template>
+        </el-menu-item>
+
+        <el-menu-item index="/notifications">
+          <el-icon><ChatDotRound /></el-icon>
+          <template #title>站内通知</template>
         </el-menu-item>
 
         <el-menu-item index="/help">
@@ -131,11 +136,43 @@
           <h3>物流教学软件</h3>
         </div>
         <div class="header-right">
-          <el-badge :value="alertCount" :hidden="alertCount === 0" :max="99">
-            <el-icon class="bell-btn" @click="goToAlerts">
-              <Bell />
-            </el-icon>
-          </el-badge>
+          <el-popover placement="bottom-end" :width="360" trigger="click" @show="onBellPopoverShow">
+            <template #reference>
+              <el-badge :value="notificationStore.unreadCount" :hidden="notificationStore.unreadCount === 0" :max="99">
+                <el-icon class="bell-btn">
+                  <Bell />
+                </el-icon>
+              </el-badge>
+            </template>
+            <div class="notification-popover">
+              <div class="popover-header">
+                <span class="popover-title">通知消息</span>
+                <el-button link type="primary" size="small" @click="handleMarkAllRead"
+                  :disabled="notificationStore.unreadCount === 0">全部已读</el-button>
+              </div>
+              <div v-if="recentNotifications.length === 0" class="popover-empty">
+                暂无通知
+              </div>
+              <div v-else class="popover-list">
+                <div
+                  v-for="item in recentNotifications"
+                  :key="item.id"
+                  class="popover-item"
+                  :class="{ unread: !item.is_read }"
+                  @click="handleNotifClick(item)"
+                >
+                  <div class="popover-item-title">
+                    <span class="dot" v-if="!item.is_read"></span>
+                    {{ item.title }}
+                  </div>
+                  <div class="popover-item-time">{{ formatNotifTime(item.created_at) }}</div>
+                </div>
+              </div>
+              <div class="popover-footer">
+                <el-button link type="primary" @click="goToNotifications">查看全部通知</el-button>
+              </div>
+            </div>
+          </el-popover>
           <el-tag size="small" v-if="!isMobile && authStore.user?.role_name" type="info">
             {{ authStore.user.role_name }}
           </el-tag>
@@ -157,17 +194,20 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notification'
+import { useSocket, connect, on, off } from '../utils/websocket'
 import { ElMessageBox } from 'element-plus'
 import {
   HomeFilled, Folder, ShoppingCart, Van, Box, Goods,
   User, Setting, DataAnalysis, Fold, Expand, Menu,
-  Money, Document, Bell, QuestionFilled, Avatar
+  Money, Document, Bell, QuestionFilled, Avatar, ChatDotRound
 } from '@element-plus/icons-vue'
-import { alertAPI } from '../api/alert'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
+const { isConnected } = useSocket()
 
 const activeMenu = computed(() => route.path)
 
@@ -185,10 +225,6 @@ const isMobile = ref(false)
 const isCollapse = ref(false)
 const sidebarOpen = ref(false)
 
-// 预警数量
-const alertCount = ref(0)
-let alertTimer = null
-
 const checkScreenWidth = () => {
   isMobile.value = window.innerWidth < 768
   if (isMobile.value) {
@@ -203,31 +239,63 @@ const onMenuSelect = () => {
   }
 }
 
-const fetchAlertCount = async () => {
-  try {
-    const res = await alertAPI.getCount()
-    if (res.data.code === 200) {
-      alertCount.value = res.data.data.total
-    }
-  } catch {
-    // 静默失败
-  }
+// 通知相关
+const recentNotifications = computed(() => notificationStore.notifications.slice(0, 5))
+
+const onBellPopoverShow = () => {
+  notificationStore.fetchNotifications({ page: 1, per_page: 5 })
+}
+
+const handleMarkAllRead = () => {
+  notificationStore.markAllRead()
+}
+
+const goToNotifications = () => {
+  router.push('/notifications')
 }
 
 const goToAlerts = () => {
   router.push('/alerts')
 }
 
+const handleNotifClick = (item) => {
+  if (!item.is_read) {
+    notificationStore.markAsRead(item.id)
+  }
+  // 跳转到通知中心
+  router.push('/notifications')
+}
+
+const formatNotifTime = (timeStr) => {
+  if (!timeStr) return ''
+  const d = new Date(timeStr)
+  const now = new Date()
+  const diff = now - d
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
+  const pad = n => String(n).padStart(2, '0')
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// WebSocket 监听新通知
+const onNewNotification = (data) => {
+  notificationStore.onNewNotification(data)
+}
+
 onMounted(() => {
   checkScreenWidth()
   window.addEventListener('resize', checkScreenWidth)
-  fetchAlertCount()
-  alertTimer = setInterval(fetchAlertCount, 5 * 60 * 1000)
+  // 获取未读数量
+  notificationStore.fetchUnreadCount()
+  // 连接 WebSocket 并监听通知
+  connect()
+  on('new_notification', onNewNotification)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreenWidth)
-  if (alertTimer) clearInterval(alertTimer)
+  off('new_notification', onNewNotification)
 })
 
 const handleLogout = async () => {
@@ -292,6 +360,88 @@ const handleLogout = async () => {
 
 .bell-btn:hover {
   color: #409EFF;
+}
+
+.notification-popover {
+  margin: -12px;
+}
+
+.popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #EBEEF5;
+}
+
+.popover-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.popover-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: #909399;
+}
+
+.popover-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.popover-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f7fa;
+  transition: background 0.2s;
+}
+
+.popover-item:hover {
+  background-color: #f5f7fa;
+}
+
+.popover-item.unread {
+  background-color: #ecf5ff;
+}
+
+.popover-item-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popover-item.unread .popover-item-title {
+  font-weight: 600;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #409EFF;
+  flex-shrink: 0;
+}
+
+.popover-item-time {
+  font-size: 12px;
+  color: #909399;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.popover-footer {
+  padding: 8px 16px;
+  text-align: center;
+  border-top: 1px solid #EBEEF5;
 }
 
 .el-aside {

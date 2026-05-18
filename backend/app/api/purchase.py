@@ -10,6 +10,7 @@ from app.api.logs import log_operation
 from app.utils.scoring import score_operation
 from app.utils.time_helper import beijing_now
 from app.utils.permissions import role_required
+from app.utils.notification_helper import send_notification, notify_role_users
 from app.models.approval import ApprovalRecord
 from datetime import date
 
@@ -125,6 +126,13 @@ def create_purchase_request():
         action='create'
     )
 
+    # 通知审批人：有新的采购申请待审批
+    notify_role_users('admin', 'approval',
+                      '新的采购申请待审批',
+                      f'{current_user.real_name} 提交了采购申请 {pr.req_no}，请及时审批。',
+                      reference_type='purchase_request', reference_id=pr.id,
+                      sender_id=current_user.id)
+
     return success_response(pr.to_dict(), '采购申请创建成功')
 
 
@@ -172,6 +180,14 @@ def approve_purchase_request(pr_id):
                     module='purchase_request', action='approve')
     broadcast_order_status('purchase_request', pr.id, 'approved', current_user.group_id)
 
+    # 通知申请人：采购申请已通过
+    if pr.applicant_id:
+        send_notification(pr.applicant_id, 'approval',
+                          '采购申请已通过',
+                          f'您的采购申请 {pr.req_no} 已审批通过，可以生成采购订单。',
+                          reference_type='purchase_request', reference_id=pr.id,
+                          sender_id=current_user.id)
+
     return success_response(pr.to_dict(), '审批通过')
 
 
@@ -211,6 +227,14 @@ def reject_purchase_request(pr_id):
     score_operation(user_id=current_user.id, group_id=current_user.group_id,
                     module='purchase_request', action='reject')
     broadcast_order_status('purchase_request', pr.id, 'rejected', current_user.group_id)
+
+    # 通知申请人：采购申请已驳回
+    if pr.applicant_id:
+        send_notification(pr.applicant_id, 'approval',
+                          '采购申请已驳回',
+                          f'您的采购申请 {pr.req_no} 已被驳回。原因：{pr.review_comment}',
+                          reference_type='purchase_request', reference_id=pr.id,
+                          sender_id=current_user.id)
 
     return success_response(pr.to_dict(), '已驳回')
 
@@ -265,6 +289,14 @@ def return_purchase_request(pr_id):
     score_operation(user_id=current_user.id, group_id=current_user.group_id,
                     module='purchase_request', action='return')
     broadcast_order_status('purchase_request', pr.id, 'returned', current_user.group_id)
+
+    # 通知申请人：采购申请被退回
+    if pr.applicant_id:
+        send_notification(pr.applicant_id, 'approval',
+                          '采购申请已退回',
+                          f'您的采购申请 {pr.req_no} 已被退回。意见：{comment}，请修改后重新提交。',
+                          reference_type='purchase_request', reference_id=pr.id,
+                          sender_id=current_user.id)
 
     return success_response(pr.to_dict(), '已退回，申请人可修改后重新提交')
 

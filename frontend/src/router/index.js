@@ -54,6 +54,8 @@ const routes = [
       { path: 'users', name: 'UserManage', component: () => import('../views/UserManageView.vue'), meta: { roles: ['admin', 'teacher'] } },
       // 预警中心
       { path: 'alerts', name: 'Alerts', component: () => import('../views/AlertView.vue') },
+      // 站内通知
+      { path: 'notifications', name: 'Notifications', component: () => import('../views/NotificationView.vue') },
       // 帮助中心
       { path: 'help', name: 'Help', component: () => import('../views/HelpView.vue') },
     ]

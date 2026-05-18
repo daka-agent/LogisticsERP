@@ -11,6 +11,7 @@ from app.api.logs import log_operation
 from app.utils.scoring import score_operation
 from app.utils.time_helper import beijing_now
 from app.utils.permissions import role_required
+from app.utils.notification_helper import send_notification, notify_role_users
 from app.models.approval import ApprovalRecord
 from datetime import date
 from decimal import Decimal
@@ -106,6 +107,13 @@ def create_order():
                     module='transport_order', action='create')
     broadcast_order_status('transport_order', order.id, 'pending', current_user.group_id)
 
+    # 通知审批人：有新的运输订单待审核
+    notify_role_users('admin', 'approval',
+                      '新的运输订单待审核',
+                      f'{current_user.real_name} 创建了运输订单 {order.order_no}，请及时审核。',
+                      reference_type='transport_order', reference_id=order.id,
+                      sender_id=current_user.id)
+
     return success_response(order.to_dict(), '运输订单创建成功')
 
 
@@ -149,6 +157,14 @@ def approve_order(order_id):
                     module='transport_order', action='approve')
     broadcast_order_status('transport_order', order.id, 'approved', current_user.group_id)
 
+    # 通知创建人：运输订单已审核通过
+    if order.operator_id:
+        send_notification(order.operator_id, 'approval',
+                          '运输订单已审核通过',
+                          f'您的运输订单 {order.order_no} 已审核通过，等待调度。',
+                          reference_type='transport_order', reference_id=order.id,
+                          sender_id=current_user.id)
+
     return success_response(order.to_dict(), '审核通过')
 
 
@@ -186,6 +202,14 @@ def reject_order(order_id):
     score_operation(user_id=current_user.id, group_id=current_user.group_id,
                     module='transport_order', action='reject')
     broadcast_order_status('transport_order', order.id, 'cancelled', current_user.group_id)
+
+    # 通知创建人：运输订单已驳回
+    if order.operator_id:
+        send_notification(order.operator_id, 'approval',
+                          '运输订单已驳回',
+                          f'您的运输订单 {order.order_no} 已被驳回。原因：{reject_comment}',
+                          reference_type='transport_order', reference_id=order.id,
+                          sender_id=current_user.id)
 
     return success_response(order.to_dict(), '已驳回')
 
@@ -237,6 +261,14 @@ def return_order(order_id):
     score_operation(user_id=current_user.id, group_id=current_user.group_id,
                     module='transport_order', action='return')
     broadcast_order_status('transport_order', order.id, 'returned', current_user.group_id)
+
+    # 通知创建人：运输订单被退回
+    if order.operator_id:
+        send_notification(order.operator_id, 'approval',
+                          '运输订单已退回',
+                          f'您的运输订单 {order.order_no} 已被退回。意见：{comment}，请修改后重新提交。',
+                          reference_type='transport_order', reference_id=order.id,
+                          sender_id=current_user.id)
 
     return success_response(order.to_dict(), '已退回，申请人可修改后重新提交')
 
@@ -327,6 +359,14 @@ def dispatch_order(order_id):
     score_operation(user_id=current_user.id, group_id=current_user.group_id,
                     module='transport_order', action='dispatch')
     broadcast_order_status('transport_order', order.id, 'dispatched', current_user.group_id)
+
+    # 通知司机：有新的运输任务
+    if driver_id:
+        send_notification(driver_id, 'todo',
+                          '新的运输任务',
+                          f'运输订单 {order.order_no} 已调度给您，{order.origin} → {order.destination}，请准备出发。',
+                          reference_type='transport_order', reference_id=order.id,
+                          sender_id=current_user.id)
 
     return success_response(order.to_dict(), '调度完成')
 

@@ -16,6 +16,7 @@ from app.models.collab import OperationLog, Score
 from app.models.finance import AccountsPayable, PayablePayment, AccountsReceivable, ReceivablePayment
 from app.models.contract import PurchaseContract, TransportContract
 from app.models.approval import ApprovalRecord
+from app.models.notification import Notification
 
 __all__ = [
     'User', 'Role', 'Group',
@@ -30,4 +31,5 @@ __all__ = [
     'AccountsPayable', 'PayablePayment', 'AccountsReceivable', 'ReceivablePayment',
     'PurchaseContract', 'TransportContract',
     'ApprovalRecord',
+    'Notification',
 ]

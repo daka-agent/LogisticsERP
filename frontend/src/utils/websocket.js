@@ -76,6 +76,12 @@ function connect() {
     console.log('进度更新:', data)
     emit('group_progress', data)
   })
+
+  // 新站内通知
+  socket.on('new_notification', (data) => {
+    console.log('新通知:', data)
+    emit('new_notification', data)
+  })
 }
 
 function disconnect() {

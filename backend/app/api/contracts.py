@@ -4,6 +4,7 @@
 包含采购合同和运输合同的 CRUD、审批流、终止等操作。
 """
 from datetime import date
+from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from app import db
@@ -16,6 +17,7 @@ from app.utils.scoring import score_operation
 from app.utils.time_helper import beijing_now
 from app.extensions import socketio
 from app.utils.permissions import role_required
+from app.utils.notification_helper import send_notification, notify_role_users
 from app.models.approval import ApprovalRecord
 
 bp = Blueprint('contracts', __name__, url_prefix='/api/contracts')
@@ -187,6 +189,13 @@ def create_purchase_contract():
     db.session.add(log)
     db.session.commit()
 
+    # 通知审批人：有新的采购合同待审批
+    notify_role_users('admin', 'approval',
+                      '新的采购合同待审批',
+                      f'{current_user.real_name} 创建了采购合同 {contract.contract_no}，请及时审批。',
+                      reference_type='purchase_contract', reference_id=contract.id,
+                      sender_id=current_user.id)
+
     return jsonify({
         'code': 200,
         'message': '采购合同创建成功，请等待审批',
@@ -241,6 +250,14 @@ def approve_purchase_contract(contract_id):
         extra_data={'description': f'审批通过采购合同 {contract.contract_no}'}
     )
 
+    # 通知创建人：采购合同已审批通过
+    if contract.operator_id:
+        send_notification(contract.operator_id, 'approval',
+                          '采购合同已审批通过',
+                          f'您的采购合同 {contract.contract_no} 已审批通过。',
+                          reference_type='purchase_contract', reference_id=contract.id,
+                          sender_id=current_user.id)
+
     return jsonify({'code': 200, 'message': '审批通过', 'data': contract.to_dict()})
 
 
@@ -274,6 +291,14 @@ def return_purchase_contract(contract_id):
     )
     db.session.add(record)
 
+    # 通知创建人：采购合同被退回
+    if contract.operator_id:
+        send_notification(contract.operator_id, 'approval',
+                          '采购合同已退回',
+                          f'您的采购合同 {contract.contract_no} 已被退回。意见：{comment}',
+                          reference_type='purchase_contract', reference_id=contract.id,
+                          sender_id=current_user.id)
+
     return jsonify({'code': 200, 'message': '已退回', 'data': contract.to_dict()})
 
 
@@ -304,6 +329,14 @@ def reject_purchase_contract(contract_id):
     )
     db.session.add(record)
 
+    # 通知创建人：采购合同已驳回
+    if contract.operator_id:
+        send_notification(contract.operator_id, 'approval',
+                          '采购合同已驳回',
+                          f'您的采购合同 {contract.contract_no} 已被驳回。原因：{data.get("comment", "")}',
+                          reference_type='purchase_contract', reference_id=contract.id,
+                          sender_id=current_user.id)
+
     return jsonify({'code': 200, 'message': '已驳回', 'data': contract.to_dict()})
 
 
@@ -330,6 +363,14 @@ def terminate_purchase_contract(contract_id):
         is_correct=True,
         extra_data={'description': f'终止采购合同 {contract.contract_no}'}
     )
+
+    # 通知创建人：采购合同已终止
+    if contract.operator_id:
+        send_notification(contract.operator_id, 'system',
+                          '采购合同已终止',
+                          f'您的采购合同 {contract.contract_no} 已被终止。',
+                          reference_type='purchase_contract', reference_id=contract.id,
+                          sender_id=current_user.id)
 
     return jsonify({'code': 200, 'message': '合同已终止', 'data': contract.to_dict()})
 
@@ -465,6 +506,13 @@ def create_transport_contract():
     db.session.add(log)
     db.session.commit()
 
+    # 通知审批人：有新的运输合同待审批
+    notify_role_users('admin', 'approval',
+                      '新的运输合同待审批',
+                      f'{current_user.real_name} 创建了运输合同 {contract.contract_no}，请及时审批。',
+                      reference_type='transport_contract', reference_id=contract.id,
+                      sender_id=current_user.id)
+
     return jsonify({
         'code': 200,
         'message': '运输合同创建成功，请等待审批',
@@ -519,8 +567,15 @@ def approve_transport_contract(contract_id):
         extra_data={'description': f'审批通过运输合同 {contract.contract_no}'}
     )
 
-    return jsonify({'code': 200, 'message': '审批通过', 'data': contract.to_dict()})
+    # 通知创建人：运输合同已审批通过
+    if contract.operator_id:
+        send_notification(contract.operator_id, 'approval',
+                          '运输合同已审批通过',
+                          f'您的运输合同 {contract.contract_no} 已审批通过。',
+                          reference_type='transport_contract', reference_id=contract.id,
+                          sender_id=current_user.id)
 
+    return jsonify({'code': 200, 'message': '审批通过', 'data': contract.to_dict()})
 
 @bp.route('/transport/<int:contract_id>/return', methods=['PUT'])
 @role_required('admin', 'dispatcher')
@@ -552,8 +607,15 @@ def return_transport_contract(contract_id):
     )
     db.session.add(record)
 
-    return jsonify({'code': 200, 'message': '已退回', 'data': contract.to_dict()})
+    # 通知创建人：运输合同被退回
+    if contract.operator_id:
+        send_notification(contract.operator_id, 'approval',
+                          '运输合同已退回',
+                          f'您的运输合同 {contract.contract_no} 已被退回。意见：{comment}',
+                          reference_type='transport_contract', reference_id=contract.id,
+                          sender_id=current_user.id)
 
+    return jsonify({'code': 200, 'message': '已退回', 'data': contract.to_dict()})
 
 @bp.route('/transport/<int:contract_id>/reject', methods=['PUT'])
 @role_required('admin', 'dispatcher')
@@ -582,6 +644,14 @@ def reject_transport_contract(contract_id):
     )
     db.session.add(record)
 
+    # 通知创建人：运输合同已驳回
+    if contract.operator_id:
+        send_notification(contract.operator_id, 'approval',
+                          '运输合同已驳回',
+                          f'您的运输合同 {contract.contract_no} 已被驳回。原因：{data.get("comment", "")}',
+                          reference_type='transport_contract', reference_id=contract.id,
+                          sender_id=current_user.id)
+
     return jsonify({'code': 200, 'message': '已驳回', 'data': contract.to_dict()})
 
 
@@ -608,6 +678,14 @@ def terminate_transport_contract(contract_id):
         is_correct=True,
         extra_data={'description': f'终止运输合同 {contract.contract_no}'}
     )
+
+    # 通知创建人：运输合同已终止
+    if contract.operator_id:
+        send_notification(contract.operator_id, 'system',
+                          '运输合同已终止',
+                          f'您的运输合同 {contract.contract_no} 已被终止。',
+                          reference_type='transport_contract', reference_id=contract.id,
+                          sender_id=current_user.id)
 
     return jsonify({'code': 200, 'message': '合同已终止', 'data': contract.to_dict()})
 
