@@ -5,7 +5,11 @@
       <template #header>
         <div class="card-header">
           <span>客户管理</span>
-          <el-button type="primary" @click="showAddDialog">新增客户</el-button>
+          <div class="card-header-actions">
+            <el-button @click="handleDownloadTemplate">下载模板</el-button>
+            <el-button type="success" @click="importDialogVisible = true">批量导入</el-button>
+            <el-button type="primary" @click="showAddDialog">新增客户</el-button>
+          </div>
         </div>
       </template>
 
@@ -99,6 +103,51 @@
         <el-button type="primary" @click="handleSave">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 批量导入对话框 -->
+    <el-dialog v-model="importDialogVisible" title="批量导入客户" width="560px">
+      <div v-if="!importResult">
+        <el-upload
+          drag
+          :auto-upload="false"
+          :limit="1"
+          accept=".xlsx"
+          :on-change="handleFileChange"
+          :on-exceed="() => ElMessage.warning('只能上传一个文件')"
+        >
+          <el-icon style="font-size: 48px; color: #c0c4cc; margin-bottom: 8px;"><UploadFilled /></el-icon>
+          <div>将 .xlsx 文件拖到此处，或 <em>点击上传</em></div>
+          <template #tip>
+            <div class="el-upload__tip">仅支持 .xlsx 格式，请先下载模板填写数据</div>
+          </template>
+        </el-upload>
+      </div>
+      <div v-else>
+        <el-alert
+          :type="importResult.failed > 0 ? 'warning' : 'success'"
+          :title="`导入完成：成功 ${importResult.success} 条`"
+          :description="importResult.skipped > 0 || importResult.failed > 0 ? `跳过 ${importResult.skipped} 条，失败 ${importResult.failed} 条` : ''"
+          show-icon
+          :closable="false"
+          style="margin-bottom: 16px;"
+        />
+        <el-table v-if="importResult.errors && importResult.errors.length" :data="importResult.errors" style="width: 100%" max-height="250">
+          <el-table-column prop="row" label="行号" width="80" />
+          <el-table-column prop="reason" label="原因" />
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="importDialogVisible = false; importResult = null; importFile = null">
+          {{ importResult ? '关闭' : '取消' }}
+        </el-button>
+        <el-button v-if="!importResult" type="primary" :loading="importLoading" :disabled="!importFile" @click="handleImport">
+          开始导入
+        </el-button>
+        <el-button v-if="importResult && importResult.success > 0" type="primary" @click="importDialogVisible = false; importResult = null; importFile = null; loadData()">
+          刷新列表
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -114,7 +163,9 @@ const guideConfig = { title: '客户管理操作指引', steps: [
     ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { customerAPI } from '../api/index'
+import { importAPI } from '../api/common'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { UploadFilled } from '@element-plus/icons-vue'
 
 const customerList = ref([])
 const dialogVisible = ref(false)
@@ -218,6 +269,45 @@ const getSettlementText = (type) => {
   return map[type] || '-'
 }
 
+// 批量导入
+const importDialogVisible = ref(false)
+const importFile = ref(null)
+const importLoading = ref(false)
+const importResult = ref(null)
+
+const handleDownloadTemplate = async () => {
+  try {
+    const res = await importAPI.downloadCustomersTemplate()
+    importAPI.downloadBlob(res, '客户导入模板.xlsx')
+  } catch (error) {
+    ElMessage.error('下载模板失败')
+  }
+}
+
+const handleFileChange = (uploadFile) => {
+  importFile.value = uploadFile.raw
+}
+
+const handleImport = async () => {
+  if (!importFile.value) return
+  importLoading.value = true
+  try {
+    const res = await importAPI.importCustomers(importFile.value)
+    if (res.data.code === 200) {
+      importResult.value = res.data.data
+      if (res.data.data.failed === 0) {
+        ElMessage.success(`成功导入 ${res.data.data.success} 条客户`)
+      }
+    } else {
+      ElMessage.error(res.data.message || '导入失败')
+    }
+  } catch (error) {
+    ElMessage.error('导入失败，请检查文件格式')
+  } finally {
+    importLoading.value = false
+  }
+}
+
 onMounted(() => {
   checkWidth()
   window.addEventListener('resize', checkWidth)
@@ -236,6 +326,11 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.card-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .search-form {
   margin-bottom: 20px;
 }
@@ -246,7 +341,9 @@ onUnmounted(() => {
     align-items: flex-start;
     gap: 10px;
   }
-
+  .card-header-actions {
+    flex-wrap: wrap;
+  }
   .search-form {
     display: flex;
     flex-direction: column;

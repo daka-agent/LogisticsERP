@@ -89,6 +89,9 @@ def create_app(config_class=Config):
     from app.api.notifications import bp as notifications_bp
     app.register_blueprint(notifications_bp, url_prefix='/api')
 
+    from app.api.batch_import import bp as batch_import_bp
+    app.register_blueprint(batch_import_bp, url_prefix='/api')
+
     # 启动时自动初始化预设教学场景（若不存在）
     try:
         from app.api.teaching import init_preset_scenes

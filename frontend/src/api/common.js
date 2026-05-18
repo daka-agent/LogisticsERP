@@ -55,3 +55,39 @@ export const warehouseAPI = {
   updateLocation: (id, data) => axios.put(`/locations/${id}`, data),
   deleteLocation: (id) => axios.delete(`/locations/${id}`)
 }
+
+// 批量导入API
+export const importAPI = {
+  // 商品
+  importGoods: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return axios.post('/import/goods', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  downloadGoodsTemplate: () => axios.get('/import/template/goods', { responseType: 'blob' }),
+  // 客户
+  importCustomers: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return axios.post('/import/customers', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  downloadCustomersTemplate: () => axios.get('/import/template/customers', { responseType: 'blob' }),
+  // 供应商
+  importSuppliers: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return axios.post('/import/suppliers', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  downloadSuppliersTemplate: () => axios.get('/import/template/suppliers', { responseType: 'blob' }),
+  // 通用模板下载处理
+  downloadBlob: (response, filename) => {
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  }
+}

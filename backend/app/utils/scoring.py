@@ -70,6 +70,13 @@ SCORING_RULES = {
         'create': 10,              # 创建客户
         'update': 5,               # 更新客户信息
         'delete': -5,              # 删除客户（扣分）
+        'import': 15,              # 批量导入客户
+    },
+    'goods': {
+        'import': 15,              # 批量导入商品
+    },
+    'supplier': {
+        'import': 15,              # 批量导入供应商
     }
 }
 
