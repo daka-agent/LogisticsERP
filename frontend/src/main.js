@@ -6,7 +6,7 @@ import App from './App.vue'
 import router from './router'
 import axios from 'axios'
 import './assets/global.css'
-import { permissionDirective } from './directives/permission'
+import { permissionDirective, roleDirective } from './directives/permission'
 
 // 全局配置 axios
 axios.defaults.baseURL = '/api'
@@ -19,4 +19,5 @@ app.use(pinia)
 app.use(router)
 app.use(ElementPlus)
 app.directive('permission', permissionDirective)
+app.directive('role', roleDirective)
 app.mount('#app')

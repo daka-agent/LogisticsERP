@@ -6,7 +6,7 @@
         <div class="card-header">
           <span>采购订单管理</span>
           <div>
-            <el-button type="success" @click="handleExport" style="margin-right: 10px">导出数据</el-button>
+            <el-button v-permission="'export:data'" type="success" @click="handleExport" style="margin-right: 10px">导出数据</el-button>
             <el-button type="primary" @click="showCreateDialog">新建订单</el-button>
           </div>
         </div>

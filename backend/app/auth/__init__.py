@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models.user import User
+from app.utils.permissions import get_user_permissions, get_role_menu_permissions
 
 bp = Blueprint('auth', __name__)
 
@@ -24,10 +25,14 @@ def login():
 
     login_user(user)
 
+    user_data = user.to_dict()
+    user_data['permissions'] = get_user_permissions(user.role_code)
+    user_data['menu_permissions'] = get_role_menu_permissions(user.role_code)
+
     return jsonify({
         'code': 200,
         'message': 'success',
-        'data': user.to_dict()
+        'data': user_data
     }), 200
 
 
@@ -42,9 +47,13 @@ def logout():
 @bp.route('/me', methods=['GET'])
 @login_required
 def me():
-    """获取当前登录用户信息"""
+    """获取当前登录用户信息（含权限列表和菜单权限）"""
+    user_data = current_user.to_dict()
+    user_data['permissions'] = get_user_permissions(current_user.role_code)
+    user_data['menu_permissions'] = get_role_menu_permissions(current_user.role_code)
+
     return jsonify({
         'code': 200,
         'message': 'success',
-        'data': current_user.to_dict()
+        'data': user_data
     }), 200

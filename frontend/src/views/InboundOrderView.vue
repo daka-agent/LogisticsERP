@@ -3,7 +3,7 @@
     <PageGuide v-bind="guideConfig" />
 <div class="page-header">
       <h2>入库管理</h2>
-      <el-button type="primary" @click="showCreateDialog = true">新建入库单</el-button>
+      <el-button v-permission="'warehouse:create_inbound'" type="primary" @click="showCreateDialog = true">新建入库单</el-button>
     </div>
 
     <!-- 搜索栏 -->

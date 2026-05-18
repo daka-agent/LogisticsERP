@@ -12,7 +12,7 @@
               <el-option label="已退回" value="returned" />
               <el-option label="已驳回" value="rejected" />
             </el-select>
-            <el-button type="primary" @click="showCreateDialog">新建申请</el-button>
+            <el-button v-permission="'purchase:create'" type="primary" @click="showCreateDialog">新建申请</el-button>
           </div>
         </div>
       </template>
@@ -37,10 +37,10 @@
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{row}">
             <el-button size="small" @click="showDetail(row)">详情</el-button>
-            <el-button v-if="row.status==='pending'" size="small" type="success" @click="handleApprove(row)">通过</el-button>
-            <el-button v-if="row.status==='pending'" size="small" type="warning" @click="handleReturn(row)">退回</el-button>
-            <el-button v-if="row.status==='pending'" size="small" type="danger" @click="handleReject(row)">驳回</el-button>
-            <el-button v-if="row.status==='returned'" size="small" type="primary" @click="handleResubmit(row)">重新提交</el-button>
+            <el-button v-permission="'purchase:approve'" v-if="row.status==='pending'" size="small" type="success" @click="handleApprove(row)">通过</el-button>
+            <el-button v-permission="'purchase:approve'" v-if="row.status==='pending'" size="small" type="warning" @click="handleReturn(row)">退回</el-button>
+            <el-button v-permission="'purchase:reject'" v-if="row.status==='pending'" size="small" type="danger" @click="handleReject(row)">驳回</el-button>
+            <el-button v-permission="'purchase:create'" v-if="row.status==='returned'" size="small" type="primary" @click="handleResubmit(row)">重新提交</el-button>
           </template>
         </el-table-column>
       </el-table>

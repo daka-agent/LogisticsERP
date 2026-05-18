@@ -31,7 +31,7 @@ const routes = [
       { path: 'inventory', name: 'Inventory', component: () => import('../views/InventoryView.vue') },
       { path: 'inventory/stock-count', name: 'StockCount', component: () => import('../views/StockCountView.vue') },
       // 数据报表
-      { path: 'reports', name: 'Reports', component: () => import('../views/ReportsView.vue') },
+      { path: 'reports', name: 'Reports', component: () => import('../views/ReportsView.vue'), meta: { roles: ['admin', 'teacher'] } },
       // 财务管理
       { path: 'finance/overview', name: 'FinanceOverview', component: () => import('../views/finance/FinanceOverview.vue') },
       { path: 'finance/payable', name: 'AccountsPayable', component: () => import('../views/finance/AccountsPayableView.vue') },
@@ -45,11 +45,11 @@ const routes = [
       // 多人协作
       { path: 'collab/hall', name: 'RoomHall', component: () => import('../views/RoomHallView.vue') },
       // 教师后台
-      { path: 'teacher/scenes', name: 'SceneManage', component: () => import('../views/teacher/SceneManageView.vue') },
-      { path: 'teacher/progress', name: 'ProgressMonitor', component: () => import('../views/teacher/ProgressMonitorView.vue') },
-      { path: 'teacher/events', name: 'EventInject', component: () => import('../views/teacher/EventInjectView.vue') },
-      { path: 'teacher/scores', name: 'ScoreManage', component: () => import('../views/teacher/ScoreManageView.vue') },
-      { path: 'teacher/logs', name: 'OperationLog', component: () => import('../views/teacher/OperationLogView.vue') },
+      { path: 'teacher/scenes', name: 'SceneManage', component: () => import('../views/teacher/SceneManageView.vue'), meta: { roles: ['admin', 'teacher'] } },
+      { path: 'teacher/progress', name: 'ProgressMonitor', component: () => import('../views/teacher/ProgressMonitorView.vue'), meta: { roles: ['admin', 'teacher'] } },
+      { path: 'teacher/events', name: 'EventInject', component: () => import('../views/teacher/EventInjectView.vue'), meta: { roles: ['admin', 'teacher'] } },
+      { path: 'teacher/scores', name: 'ScoreManage', component: () => import('../views/teacher/ScoreManageView.vue'), meta: { roles: ['admin', 'teacher'] } },
+      { path: 'teacher/logs', name: 'OperationLog', component: () => import('../views/teacher/OperationLogView.vue'), meta: { roles: ['admin', 'teacher'] } },
       // 用户管理
       { path: 'users', name: 'UserManage', component: () => import('../views/UserManageView.vue'), meta: { roles: ['admin', 'teacher'] } },
       // 预警中心

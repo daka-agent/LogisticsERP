@@ -14,8 +14,8 @@
               <el-option label="已到达" value="arrived" />
               <el-option label="已完成" value="completed" />
             </el-select>
-            <el-button type="success" @click="handleExport" style="margin-right:10px">导出数据</el-button>
-            <el-button type="primary" @click="showCreateDialog">新建订单</el-button>
+            <el-button v-permission="'export:data'" type="success" @click="handleExport" style="margin-right:10px">导出数据</el-button>
+            <el-button v-permission="'transport:create'" type="primary" @click="showCreateDialog">新建订单</el-button>
           </div>
         </div>
       </template>
@@ -37,11 +37,11 @@
             <el-table-column label="操作" width="320" fixed="right">
           <template #default="{row}">
             <el-button size="small" @click="viewDetail(row)">详情</el-button>
-            <el-button v-if="row.status==='pending'" size="small" type="success" @click="handleApprove(row)">审核通过</el-button>
-            <el-button v-if="row.status==='pending'" size="small" type="warning" @click="handleReturn(row)">退回</el-button>
-            <el-button v-if="row.status==='pending'" size="small" type="danger" @click="handleReject(row)">驳回</el-button>
-            <el-button v-if="row.status==='returned'" size="small" type="primary" @click="handleResubmit(row)">重新提交</el-button>
-            <el-button v-if="row.status==='approved'" size="small" type="warning" @click="showDispatchDialog(row)">调度</el-button>
+            <el-button v-permission="'transport:approve'" v-if="row.status==='pending'" size="small" type="success" @click="handleApprove(row)">审核通过</el-button>
+            <el-button v-permission="'transport:approve'" v-if="row.status==='pending'" size="small" type="warning" @click="handleReturn(row)">退回</el-button>
+            <el-button v-permission="'transport:reject'" v-if="row.status==='pending'" size="small" type="danger" @click="handleReject(row)">驳回</el-button>
+            <el-button v-permission="'transport:create'" v-if="row.status==='returned'" size="small" type="primary" @click="handleResubmit(row)">重新提交</el-button>
+            <el-button v-permission="'transport:dispatch'" v-if="row.status==='approved'" size="small" type="warning" @click="showDispatchDialog(row)">调度</el-button>
           </template>
         </el-table-column>
       </el-table>

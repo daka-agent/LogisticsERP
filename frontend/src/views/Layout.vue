@@ -89,8 +89,12 @@
           <el-menu-item index="/teacher/events">事件注入</el-menu-item>
           <el-menu-item index="/teacher/scores">成绩统计</el-menu-item>
           <el-menu-item index="/teacher/logs">操作日志</el-menu-item>
-          <el-menu-item v-if="menu.users" index="/users">用户管理</el-menu-item>
         </el-sub-menu>
+
+        <el-menu-item v-if="menu.users" index="/users">
+          <el-icon><Avatar /></el-icon>
+          <template #title>用户管理</template>
+        </el-menu-item>
 
         <el-menu-item index="/alerts">
           <el-icon><Bell /></el-icon>
@@ -157,7 +161,7 @@ import { ElMessageBox } from 'element-plus'
 import {
   HomeFilled, Folder, ShoppingCart, Van, Box, Goods,
   User, Setting, DataAnalysis, Fold, Expand, Menu,
-  Money, Document, Bell, QuestionFilled
+  Money, Document, Bell, QuestionFilled, Avatar
 } from '@element-plus/icons-vue'
 import { alertAPI } from '../api/alert'
 

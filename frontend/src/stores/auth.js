@@ -7,18 +7,20 @@ const SUPER_ROLES = ['admin', 'teacher']
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const isLoggedIn = ref(false)
-  const menuPermissions = ref(null)
+  const permissions = ref([])      // 权限代码列表，如 ['purchase:create', 'transport:approve']
+  const menuPermissions = ref(null) // 菜单可见性配置
 
   // 登录
   async function login(credentials) {
     try {
       const response = await axios.post('/auth/login', credentials)
       if (response.data.code === 200) {
-        user.value = response.data.data
+        const data = response.data.data
+        user.value = data
         isLoggedIn.value = true
-        // 登录成功后获取菜单权限
-        _initMenuPermissions()
-        return { success: true, data: response.data.data }
+        permissions.value = data.permissions || []
+        menuPermissions.value = data.menu_permissions || null
+        return { success: true, data }
       } else {
         return { success: false, message: response.data.message }
       }
@@ -36,6 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       user.value = null
       isLoggedIn.value = false
+      permissions.value = []
       menuPermissions.value = null
     }
   }
@@ -45,14 +48,17 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await axios.get('/auth/me')
       if (response.data.code === 200) {
-        user.value = response.data.data
+        const data = response.data.data
+        user.value = data
         isLoggedIn.value = true
-        _initMenuPermissions()
+        permissions.value = data.permissions || []
+        menuPermissions.value = data.menu_permissions || null
         return true
       }
     } catch (error) {
       user.value = null
       isLoggedIn.value = false
+      permissions.value = []
       menuPermissions.value = null
       return false
     }
@@ -64,75 +70,36 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   // 检查当前用户是否拥有指定角色中的任一角色
-  function hasPermission(...roles) {
+  function hasRole(...roles) {
     const code = user.value?.role_code
     if (!code) return false
     if (SUPER_ROLES.includes(code)) return true
     return roles.includes(code)
   }
 
-  // 初始化菜单权限
-  function _initMenuPermissions() {
-    const code = user.value?.role_code
-    if (!code) {
-      menuPermissions.value = null
-      return
-    }
+  // 检查是否拥有指定权限代码
+  function hasPermission(permissionCode) {
+    if (!user.value) return false
+    if (SUPER_ROLES.includes(user.value.role_code)) return true
+    return permissions.value.includes(permissionCode)
+  }
 
-    const isSuper = SUPER_ROLES.includes(code)
-    const isStudent = code === 'student'
-
-    if (isSuper || isStudent) {
-      menuPermissions.value = {
-        suppliers: true,
-        customers: true,
-        goods: true,
-        warehouses: true,
-        vehicles: true,
-        drivers: true,
-        purchase: true,
-        transport: true,
-        warehouse: true,
-        inventory: true,
-        reports: isSuper,
-        contracts: true,
-        finance: true,
-        collab: true,
-        teacher: isSuper,
-        alerts: true,
-        help: true,
-        users: isSuper,
-      }
-    } else {
-      menuPermissions.value = {
-        suppliers: code === 'purchaser',
-        customers: ['customer_service', 'dispatcher'].includes(code),
-        goods: true,
-        warehouses: code === 'warehouse_keeper',
-        vehicles: code === 'dispatcher',
-        drivers: code === 'dispatcher',
-        purchase: code === 'purchaser',
-        transport: ['customer_service', 'dispatcher', 'driver'].includes(code),
-        warehouse: code === 'warehouse_keeper',
-        inventory: code === 'warehouse_keeper',
-        reports: false,
-        contracts: ['purchaser', 'customer_service'].includes(code),
-        finance: ['purchaser', 'customer_service'].includes(code),
-        collab: true,
-        teacher: false,
-        alerts: true,
-        help: true,
-        users: false,
-      }
-    }
+  // 检查是否拥有任一指定权限
+  function hasAnyPermission(...codes) {
+    if (!user.value) return false
+    if (SUPER_ROLES.includes(user.value.role_code)) return true
+    return codes.some(code => permissions.value.includes(code))
   }
 
   return {
     user,
     isLoggedIn,
     isTeacher,
+    permissions,
     menuPermissions,
+    hasRole,
     hasPermission,
+    hasAnyPermission,
     login,
     logout,
     checkAuth

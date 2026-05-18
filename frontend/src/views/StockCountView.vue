@@ -3,7 +3,7 @@
     <PageGuide v-bind="guideConfig" />
 <div class="page-header">
       <h2>库存盘点</h2>
-      <el-button type="primary" @click="showCreateDialog = true">新建盘点单</el-button>
+      <el-button v-permission="'stockcount:create'" type="primary" @click="showCreateDialog = true">新建盘点单</el-button>
     </div>
 
     <!-- 搜索栏 -->

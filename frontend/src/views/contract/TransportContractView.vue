@@ -5,7 +5,7 @@
       <template #header>
         <div class="card-header">
           <span>运输合同管理</span>
-          <el-button type="primary" @click="showCreateDialog = true">
+          <el-button v-permission="'contract:create_transport'" type="primary" @click="showCreateDialog = true">
             从运输订单生成合同
           </el-button>
         </div>
@@ -50,24 +50,28 @@
           <template #default="{ row }">
             <el-button size="small" @click="viewDetail(row)">详情</el-button>
             <el-button
+              v-permission="'contract:approve_transport'"
               v-if="row.status === 'pending'"
               size="small"
               type="success"
               @click="handleApprove(row)"
             >审批通过</el-button>
             <el-button
+              v-permission="'contract:approve_transport'"
               v-if="row.status === 'pending'"
               size="small"
               type="warning"
               @click="handleReturn(row)"
             >退回</el-button>
             <el-button
+              v-permission="'contract:approve_transport'"
               v-if="row.status === 'pending'"
               size="small"
               type="danger"
               @click="handleReject(row)"
             >驳回</el-button>
             <el-button
+              v-permission="'contract:terminate'"
               v-if="['approved', 'active'].includes(row.status)"
               size="small"
               type="warning"

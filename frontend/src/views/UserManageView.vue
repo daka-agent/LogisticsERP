@@ -2,7 +2,7 @@
   <div class="user-manage-view">
     <div class="card-header">
       <h3>用户管理</h3>
-      <el-button type="primary" @click="showCreateDialog">新增用户</el-button>
+      <el-button v-permission="'user:manage'" type="primary" @click="showCreateDialog">新增用户</el-button>
     </div>
 
     <!-- 搜索栏 -->

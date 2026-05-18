@@ -1,14 +1,14 @@
 /**
  * usePermission composable
- * 提供 JS 逻辑中的权限判断方法
+ *
+ * 在 JS/TS 逻辑中检查权限（非模板指令）
  *
  * 用法：
- *   import { usePermission } from '../composables/usePermission'
- *   const { hasPermission, isSuperRole } = usePermission()
- *   if (hasPermission('admin', 'purchaser')) { ... }
+ *   const { hasRole, hasPermission, hasAnyPermission } = usePermission()
+ *   if (hasPermission('purchase:approve')) { ... }
+ *   if (hasRole('admin', 'teacher')) { ... }
  */
 
-import { computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const SUPER_ROLES = ['admin', 'teacher']
@@ -16,99 +16,50 @@ const SUPER_ROLES = ['admin', 'teacher']
 export function usePermission() {
   const authStore = useAuthStore()
 
-  const isSuperRole = computed(() => {
-    const code = authStore.user?.role_code
-    return code ? SUPER_ROLES.includes(code) : false
-  })
-
-  const currentRoleCode = computed(() => {
-    return authStore.user?.role_code || null
-  })
-
   /**
    * 检查当前用户是否拥有指定角色中的任一角色
-   * @param {...string} roles - 允许的角色列表
-   * @returns {boolean}
+   * @param {...string} roles - 角色代码列表
    */
-  function hasPermission(...roles) {
-    const code = currentRoleCode.value
-    if (!code) return false
-    if (SUPER_ROLES.includes(code)) return true
-    return roles.includes(code)
+  function hasRole(...roles) {
+    return authStore.hasRole(...roles)
   }
 
   /**
-   * 获取角色对应的菜单可见性配置
-   * @returns {Object} 菜单权限配置
+   * 检查当前用户是否拥有指定权限代码
+   * @param {string} code - 权限代码，如 'purchase:approve'
    */
-  function getMenuPermissions() {
-    const code = currentRoleCode.value
-    if (!code) {
-      return _getEmptyMenuPermissions()
-    }
+  function hasPermission(code) {
+    return authStore.hasPermission(code)
+  }
 
-    const isSuper = SUPER_ROLES.includes(code)
-    const isStudent = code === 'student'
+  /**
+   * 检查当前用户是否拥有任一指定权限代码
+   * @param {...string} codes - 权限代码列表
+   */
+  function hasAnyPermission(...codes) {
+    return authStore.hasAnyPermission(...codes)
+  }
 
-    if (isSuper || isStudent) {
-      return {
-        suppliers: true,
-        customers: true,
-        goods: true,
-        warehouses: true,
-        vehicles: true,
-        drivers: true,
-        purchase: true,
-        transport: true,
-        warehouse: true,
-        inventory: true,
-        reports: isSuper,
-        contracts: true,
-        finance: true,
-        collab: true,
-        teacher: isSuper,
-        alerts: true,
-        help: true,
-        users: isSuper,
-      }
-    }
+  /**
+   * 获取当前用户角色代码
+   */
+  function getRoleCode() {
+    return authStore.user?.role_code
+  }
 
-    return {
-      suppliers: code === 'purchaser',
-      customers: ['customer_service', 'dispatcher'].includes(code),
-      goods: true,
-      warehouses: code === 'warehouse_keeper',
-      vehicles: code === 'dispatcher',
-      drivers: code === 'dispatcher',
-      purchase: code === 'purchaser',
-      transport: ['customer_service', 'dispatcher', 'driver'].includes(code),
-      warehouse: code === 'warehouse_keeper',
-      inventory: code === 'warehouse_keeper',
-      reports: false,
-      contracts: ['purchaser', 'customer_service'].includes(code),
-      finance: ['purchaser', 'customer_service'].includes(code),
-      collab: true,
-      teacher: false,
-      alerts: true,
-      help: true,
-      users: false,
-    }
+  /**
+   * 是否为超级角色（admin/teacher）
+   */
+  function isSuperRole() {
+    const code = authStore.user?.role_code
+    return SUPER_ROLES.includes(code)
   }
 
   return {
+    hasRole,
     hasPermission,
-    isSuperRole,
-    currentRoleCode,
-    getMenuPermissions,
-  }
-}
-
-function _getEmptyMenuPermissions() {
-  return {
-    suppliers: false, customers: false, goods: false, warehouses: false,
-    vehicles: false, drivers: false, purchase: false, transport: false,
-    warehouse: false, inventory: false, reports: false, contracts: false,
-    finance: false, collab: false, teacher: false, alerts: false,
-    help: true, users: false,
+    hasAnyPermission,
+    getRoleCode,
+    isSuperRole
   }
 }

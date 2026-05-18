@@ -3,7 +3,7 @@
     <PageGuide v-bind="guideConfig" />
 <div class="page-header">
       <h2>库存管理</h2>
-      <el-button type="success" @click="handleExport">导出数据</el-button>
+      <el-button v-permission="'export:data'" type="success" @click="handleExport">导出数据</el-button>
     </div>
 
     <!-- 库存汇总卡片 -->
