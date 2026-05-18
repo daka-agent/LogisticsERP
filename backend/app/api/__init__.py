@@ -8,6 +8,7 @@ from app.models.driver import Driver
 from app.models.goods import Goods, Category
 from app.models.warehouse import Warehouse, Zone, Location
 from app.models.role import Role
+from app.utils.permissions import admin_required
 
 bp = Blueprint('api', __name__)
 
@@ -83,6 +84,7 @@ def update_supplier(supplier_id):
 
 
 @bp.route('/suppliers/<int:supplier_id>', methods=['DELETE'])
+@admin_required
 @login_required
 def delete_supplier(supplier_id):
     """删除供应商（软删除）"""
@@ -156,6 +158,7 @@ def update_customer(customer_id):
 
 
 @bp.route('/customers/<int:customer_id>', methods=['DELETE'])
+@admin_required
 @login_required
 def delete_customer(customer_id):
     """删除客户（软删除）"""
@@ -233,6 +236,7 @@ def update_vehicle(vehicle_id):
 
 
 @bp.route('/vehicles/<int:vehicle_id>', methods=['DELETE'])
+@admin_required
 @login_required
 def delete_vehicle(vehicle_id):
     """删除车辆（软删除）"""
@@ -310,6 +314,7 @@ def update_driver(driver_id):
 
 
 @bp.route('/drivers/<int:driver_id>', methods=['DELETE'])
+@admin_required
 @login_required
 def delete_driver(driver_id):
     """删除司机（软删除）"""
@@ -395,6 +400,7 @@ def update_goods(goods_id):
 
 
 @bp.route('/goods/<int:goods_id>', methods=['DELETE'])
+@admin_required
 @login_required
 def delete_goods(goods_id):
     """删除商品（软删除）"""
@@ -454,6 +460,7 @@ def update_warehouse(warehouse_id):
 
 
 @bp.route('/warehouses/<int:warehouse_id>', methods=['DELETE'])
+@admin_required
 @login_required
 def delete_warehouse(warehouse_id):
     """删除仓库（软删除）"""
@@ -516,6 +523,7 @@ def update_zone(zone_id):
 
 
 @bp.route('/zones/<int:zone_id>', methods=['DELETE'])
+@admin_required
 @login_required
 def delete_zone(zone_id):
     """删除库区"""
@@ -597,6 +605,7 @@ def update_location(location_id):
 
 
 @bp.route('/locations/<int:location_id>', methods=['DELETE'])
+@admin_required
 @login_required
 def delete_location(location_id):
     """删除货位"""

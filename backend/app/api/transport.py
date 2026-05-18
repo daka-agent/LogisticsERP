@@ -10,6 +10,7 @@ from app.socket import broadcast_order_status
 from app.api.logs import log_operation
 from app.utils.scoring import score_operation
 from app.utils.time_helper import beijing_now
+from app.utils.permissions import role_required
 from datetime import date
 from decimal import Decimal
 
@@ -111,6 +112,7 @@ def get_order(order_id):
 
 
 @bp.route('/orders/<int:order_id>/approve', methods=['PUT'])
+@role_required('admin', 'dispatcher')
 @login_required
 def approve_order(order_id):
     """审核通过运输订单"""
@@ -143,6 +145,7 @@ def approve_order(order_id):
 
 
 @bp.route('/orders/<int:order_id>/reject', methods=['PUT'])
+@role_required('admin', 'dispatcher')
 @login_required
 def reject_order(order_id):
     """审核驳回运输订单"""
@@ -175,6 +178,7 @@ def reject_order(order_id):
 
 
 @bp.route('/orders/<int:order_id>/dispatch', methods=['PUT'])
+@role_required('admin', 'dispatcher')
 @login_required
 def dispatch_order(order_id):
     """车辆调度"""
@@ -230,6 +234,7 @@ def dispatch_order(order_id):
 
 
 @bp.route('/orders/<int:order_id>/status', methods=['PUT'])
+@role_required('admin', 'driver', 'dispatcher')
 @login_required
 def update_order_status(order_id):
     """更新订单状态（发车/到达/签收/完成）"""
@@ -282,6 +287,7 @@ def update_order_status(order_id):
 
 
 @bp.route('/orders/<int:order_id>/pod', methods=['POST'])
+@role_required('admin', 'driver', 'dispatcher')
 @login_required
 def confirm_pod(order_id):
     """POD签收确认"""
@@ -325,6 +331,7 @@ def confirm_pod(order_id):
 
 
 @bp.route('/orders/<int:order_id>/complete', methods=['PUT'])
+@role_required('admin', 'driver', 'dispatcher')
 @login_required
 def complete_order(order_id):
     """完成订单（POD确认后）"""

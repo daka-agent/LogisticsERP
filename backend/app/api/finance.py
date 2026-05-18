@@ -7,6 +7,7 @@ from app.models.purchase import PurchaseOrder
 from app.models.transport import Order
 from app.api.logs import log_operation
 from app.utils.scoring import score_operation
+from app.utils.permissions import role_required
 from datetime import date
 
 bp = Blueprint('finance', __name__)
@@ -178,6 +179,7 @@ def get_payable_detail(payable_id):
 
 
 @bp.route('/finance/payable/<int:payable_id>/pay', methods=['POST'])
+@role_required('admin', 'purchaser')
 @login_required
 def record_payment(payable_id):
     """记录付款"""
@@ -357,6 +359,7 @@ def get_receivable_detail(receivable_id):
 
 
 @bp.route('/finance/receivable/<int:receivable_id>/receive', methods=['POST'])
+@role_required('admin', 'customer_service')
 @login_required
 def record_receipt(receivable_id):
     """记录收款"""

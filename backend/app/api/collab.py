@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.role import Role
 from app.models.teaching import TeachingScene
 from app.socket import broadcast_group_progress
+from app.utils.permissions import role_required
 from datetime import datetime
 
 bp = Blueprint('collab', __name__)
@@ -177,12 +178,10 @@ def leave_room(room_id):
 
 
 @bp.route('/rooms/<int:room_id>/close', methods=['POST'])
+@role_required('admin', 'teacher')
 @login_required
 def close_room(room_id):
     """关闭协作房间（教师操作）"""
-    if current_user.role_code not in ('admin', 'teacher'):
-        return jsonify({'code': 403, 'message': '只有教师和管理员可以关闭房间', 'data': None})
-
     room = Group.query.get(room_id)
     if not room:
         return jsonify({'code': 404, 'message': '房间不存在', 'data': None})

@@ -5,6 +5,7 @@ from app.models import Inventory, StockMove, StockCount, StockCountItem, Goods, 
 from app.socket import broadcast_order_status
 from app.api.logs import log_operation
 from app.utils.scoring import score_operation
+from app.utils.permissions import role_required
 
 bp = Blueprint('inventory', __name__)
 
@@ -275,6 +276,7 @@ def perform_count(id):
 
 
 @bp.route('/stock-counts/<int:id>/reconcile', methods=['POST'])
+@role_required('admin', 'warehouse_keeper')
 @login_required
 def reconcile_count(id):
     """盘点 reconciliation（调整库存差异）"""

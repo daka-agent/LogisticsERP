@@ -6,6 +6,7 @@ from app.models.teaching import TeachingScene
 from app.models.group import Group
 from app.models.collab import OperationLog
 from app.socket import broadcast_event, broadcast_group_progress
+from app.utils.permissions import role_required
 from datetime import datetime
 
 bp = Blueprint('teaching', __name__)
@@ -22,12 +23,10 @@ def list_scenes():
 
 
 @bp.route('/scenes', methods=['POST'])
+@role_required('admin', 'teacher')
 @login_required
 def create_scene():
     """创建教学场景"""
-    if current_user.role_code not in ('admin', 'teacher'):
-        return jsonify({'code': 403, 'message': '只有教师可以创建场景', 'data': None})
-
     data = request.get_json()
     if not data or not data.get('name'):
         return jsonify({'code': 400, 'message': '场景名称不能为空', 'data': None})
@@ -57,12 +56,10 @@ def get_scene(scene_id):
 
 
 @bp.route('/scenes/<int:scene_id>', methods=['PUT'])
+@role_required('admin', 'teacher')
 @login_required
 def update_scene(scene_id):
     """更新教学场景"""
-    if current_user.role_code not in ('admin', 'teacher'):
-        return jsonify({'code': 403, 'message': '只有教师可以编辑场景', 'data': None})
-
     scene = TeachingScene.query.get(scene_id)
     if not scene:
         return jsonify({'code': 404, 'message': '场景不存在', 'data': None})
@@ -86,12 +83,10 @@ def update_scene(scene_id):
 
 
 @bp.route('/scenes/<int:scene_id>', methods=['DELETE'])
+@role_required('admin', 'teacher')
 @login_required
 def delete_scene(scene_id):
     """删除教学场景"""
-    if current_user.role_code not in ('admin', 'teacher'):
-        return jsonify({'code': 403, 'message': '只有教师可以删除场景', 'data': None})
-
     scene = TeachingScene.query.get(scene_id)
     if not scene:
         return jsonify({'code': 404, 'message': '场景不存在', 'data': None})
@@ -206,12 +201,10 @@ def init_preset_scenes():
 # ============ 突发事件注入 ============
 
 @bp.route('/events/inject', methods=['POST'])
+@role_required('admin', 'teacher')
 @login_required
 def inject_event():
     """注入突发事件（教师端操作）"""
-    if current_user.role_code not in ('admin', 'teacher'):
-        return jsonify({'code': 403, 'message': '只有教师可以注入事件', 'data': None})
-
     data = request.get_json()
     if not data:
         return jsonify({'code': 400, 'message': '请求数据不能为空', 'data': None})

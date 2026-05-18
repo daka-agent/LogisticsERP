@@ -10,6 +10,7 @@ from app.models import (
     PurchaseOrder, Order, InboundOrder,
     OutboundOrder, Inventory, Warehouse, Location, Goods, Supplier
 )
+from app.utils.permissions import role_required
 from datetime import datetime, timedelta
 
 bp = Blueprint('reports', __name__)
@@ -17,6 +18,7 @@ from app.utils.time_helper import beijing_now
 
 
 @bp.route('/reports/inventory-turnover', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def inventory_turnover():
     """库存周转率折线图"""
@@ -58,6 +60,7 @@ def inventory_turnover():
 
 
 @bp.route('/reports/procurement-cost', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def procurement_cost():
     """采购成本对比柱状图"""
@@ -95,6 +98,7 @@ def procurement_cost():
 
 
 @bp.route('/reports/transport-ontime', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def transport_ontime():
     """运输准时率饼图"""
@@ -132,6 +136,7 @@ def transport_ontime():
 
 
 @bp.route('/reports/warehouse-utilization', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def warehouse_utilization():
     """仓库利用率雷达图"""
@@ -173,6 +178,7 @@ def warehouse_utilization():
 
 
 @bp.route('/reports/overview', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def reports_overview():
     """报表总览数据"""

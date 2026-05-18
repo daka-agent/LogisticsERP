@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { ElMessage } from 'element-plus'
 
 const routes = [
   { path: '/login', name: 'Login', component: () => import('../views/LoginView.vue') },
@@ -49,6 +50,8 @@ const routes = [
       { path: 'teacher/events', name: 'EventInject', component: () => import('../views/teacher/EventInjectView.vue') },
       { path: 'teacher/scores', name: 'ScoreManage', component: () => import('../views/teacher/ScoreManageView.vue') },
       { path: 'teacher/logs', name: 'OperationLog', component: () => import('../views/teacher/OperationLogView.vue') },
+      // 用户管理
+      { path: 'users', name: 'UserManage', component: () => import('../views/UserManageView.vue'), meta: { roles: ['admin', 'teacher'] } },
       // 预警中心
       { path: 'alerts', name: 'Alerts', component: () => import('../views/AlertView.vue') },
       // 帮助中心
@@ -89,6 +92,17 @@ router.beforeEach(async (to, from, next) => {
   await authCheckPromise
 
   if (authStore.isLoggedIn) {
+    // 检查路由级角色权限
+    const requiredRoles = to.meta.roles
+    if (requiredRoles && requiredRoles.length > 0) {
+      const userRole = authStore.user?.role_code
+      const isSuper = ['admin', 'teacher'].includes(userRole)
+      if (!isSuper && !requiredRoles.includes(userRole)) {
+        ElMessage.warning('您没有访问该页面的权限')
+        next({ path: '/' })
+        return
+      }
+    }
     next()
   } else {
     next('/login')

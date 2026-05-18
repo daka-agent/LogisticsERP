@@ -15,6 +15,7 @@ from app.models.customer import Customer
 from app.utils.scoring import score_operation
 from app.utils.time_helper import beijing_now
 from app.extensions import socketio
+from app.utils.permissions import role_required
 
 bp = Blueprint('contracts', __name__, url_prefix='/api/contracts')
 
@@ -195,6 +196,7 @@ def get_purchase_contract_detail(contract_id):
 
 
 @bp.route('/purchase/<int:contract_id>/approve', methods=['PUT'])
+@role_required('admin', 'purchaser')
 @login_required
 def approve_purchase_contract(contract_id):
     """审批通过采购合同"""
@@ -226,6 +228,7 @@ def approve_purchase_contract(contract_id):
 
 
 @bp.route('/purchase/<int:contract_id>/reject', methods=['PUT'])
+@role_required('admin', 'purchaser')
 @login_required
 def reject_purchase_contract(contract_id):
     """驳回采购合同"""
@@ -247,6 +250,7 @@ def reject_purchase_contract(contract_id):
 
 
 @bp.route('/purchase/<int:contract_id>/terminate', methods=['PUT'])
+@role_required('admin')
 @login_required
 def terminate_purchase_contract(contract_id):
     """终止采购合同"""
@@ -413,6 +417,7 @@ def get_transport_contract_detail(contract_id):
 
 
 @bp.route('/transport/<int:contract_id>/approve', methods=['PUT'])
+@role_required('admin', 'dispatcher')
 @login_required
 def approve_transport_contract(contract_id):
     """审批通过运输合同"""
@@ -444,6 +449,7 @@ def approve_transport_contract(contract_id):
 
 
 @bp.route('/transport/<int:contract_id>/reject', methods=['PUT'])
+@role_required('admin', 'dispatcher')
 @login_required
 def reject_transport_contract(contract_id):
     """驳回运输合同"""
@@ -465,6 +471,7 @@ def reject_transport_contract(contract_id):
 
 
 @bp.route('/transport/<int:contract_id>/terminate', methods=['PUT'])
+@role_required('admin')
 @login_required
 def terminate_transport_contract(contract_id):
     """终止运输合同"""

@@ -11,11 +11,13 @@ import codecs
 from flask_login import login_required
 from app.models import PurchaseOrder, Order, Inventory, Goods, Warehouse, Supplier
 from app.utils.time_helper import beijing_now
+from app.utils.permissions import role_required
 
 bp = Blueprint('export', __name__)
 
 
 @bp.route('/export/purchase-orders', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def export_purchase_orders():
     """导出采购订单（Excel/CSV）"""
@@ -29,6 +31,7 @@ def export_purchase_orders():
 
 
 @bp.route('/export/transport-orders', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def export_transport_orders():
     """导出运输订单（Excel/CSV）"""
@@ -42,6 +45,7 @@ def export_transport_orders():
 
 
 @bp.route('/export/inventory', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def export_inventory():
     """导出库存数据（Excel/CSV）"""

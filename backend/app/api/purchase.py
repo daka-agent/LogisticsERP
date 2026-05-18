@@ -9,6 +9,7 @@ from app.socket import broadcast_order_status
 from app.api.logs import log_operation
 from app.utils.scoring import score_operation
 from app.utils.time_helper import beijing_now
+from app.utils.permissions import role_required
 from datetime import date
 
 bp = Blueprint('purchase', __name__)
@@ -130,6 +131,7 @@ def get_purchase_request(pr_id):
 
 
 @bp.route('/purchase-requests/<int:pr_id>/approve', methods=['PUT'])
+@role_required('admin', 'purchaser')
 @login_required
 def approve_purchase_request(pr_id):
     """审批通过采购申请"""
@@ -165,6 +167,7 @@ def approve_purchase_request(pr_id):
 
 
 @bp.route('/purchase-requests/<int:pr_id>/reject', methods=['PUT'])
+@role_required('admin', 'purchaser')
 @login_required
 def reject_purchase_request(pr_id):
     """审批驳回采购申请"""

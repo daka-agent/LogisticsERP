@@ -6,6 +6,7 @@ from app.utils.scoring import calculate_group_score, calculate_user_score, score
 from app.models.collab import Score, OperationLog
 from app.models.user import User
 from app.models.group import Group
+from app.utils.permissions import role_required
 from sqlalchemy import func
 
 bp = Blueprint('scores', __name__)
@@ -82,12 +83,10 @@ def get_group_ranking():
 
 
 @bp.route('/scores/all', methods=['GET'])
+@role_required('admin', 'teacher')
 @login_required
 def get_all_scores():
     """获取所有评分记录（教师用）"""
-    if current_user.role_code not in ('admin', 'teacher'):
-        return jsonify({'code': 403, 'message': '权限不足', 'data': None})
-
     query = Score.query
 
     group_id = request.args.get('group_id')

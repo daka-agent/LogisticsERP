@@ -6,6 +6,7 @@ from app.models import Warehouse, Zone, Location, Goods
 from app.socket import broadcast_order_status
 from app.api.logs import log_operation
 from app.utils.scoring import score_operation
+from app.utils.permissions import role_required
 
 bp = Blueprint('warehouse', __name__)
 
@@ -108,6 +109,7 @@ def create_inbound_order():
 
 
 @bp.route('/inbound/<int:id>/shelve', methods=['POST'])
+@role_required('admin', 'warehouse_keeper')
 @login_required
 def shelve_inbound(id):
     """入库上架（完成入库）"""
@@ -277,6 +279,7 @@ def create_outbound_order():
 
 
 @bp.route('/outbound/<int:id>/pick', methods=['POST'])
+@role_required('admin', 'warehouse_keeper')
 @login_required
 def pick_outbound(id):
     """出库拣货"""
@@ -354,6 +357,7 @@ def pick_outbound(id):
 
 
 @bp.route('/outbound/<int:id>/ship', methods=['POST'])
+@role_required('admin', 'warehouse_keeper')
 @login_required
 def ship_outbound(id):
     """出库发货"""

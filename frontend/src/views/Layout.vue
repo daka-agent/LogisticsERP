@@ -26,69 +26,70 @@
           <template #title>首页</template>
         </el-menu-item>
 
-        <el-sub-menu index="base-data">
+        <el-sub-menu v-if="menu.suppliers" index="base-data">
           <template #title><el-icon><Folder /></el-icon><span>基础数据</span></template>
-          <el-menu-item index="/suppliers">供应商管理</el-menu-item>
-          <el-menu-item index="/customers">客户管理</el-menu-item>
-          <el-menu-item index="/goods">商品管理</el-menu-item>
-          <el-menu-item index="/warehouses">仓库管理</el-menu-item>
-          <el-menu-item index="/vehicles">车辆管理</el-menu-item>
-          <el-menu-item index="/drivers">司机管理</el-menu-item>
+          <el-menu-item v-if="menu.suppliers" index="/suppliers">供应商管理</el-menu-item>
+          <el-menu-item v-if="menu.customers" index="/customers">客户管理</el-menu-item>
+          <el-menu-item v-if="menu.goods" index="/goods">商品管理</el-menu-item>
+          <el-menu-item v-if="menu.warehouses" index="/warehouses">仓库管理</el-menu-item>
+          <el-menu-item v-if="menu.vehicles" index="/vehicles">车辆管理</el-menu-item>
+          <el-menu-item v-if="menu.drivers" index="/drivers">司机管理</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="purchase">
+        <el-sub-menu v-if="menu.purchase" index="purchase">
           <template #title><el-icon><ShoppingCart /></el-icon><span>采购管理</span></template>
           <el-menu-item index="/purchase/requests">采购申请</el-menu-item>
           <el-menu-item index="/purchase/orders">采购订单</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="transport">
+        <el-sub-menu v-if="menu.transport" index="transport">
           <template #title><el-icon><Van /></el-icon><span>运输管理</span></template>
           <el-menu-item index="/transport/orders">运输订单</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="warehouse">
+        <el-sub-menu v-if="menu.warehouse" index="warehouse">
           <template #title><el-icon><Box /></el-icon><span>仓储管理</span></template>
           <el-menu-item index="/warehouse/inbound">入库管理</el-menu-item>
           <el-menu-item index="/warehouse/outbound">出库管理</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="inventory">
+        <el-sub-menu v-if="menu.inventory" index="inventory">
           <template #title><el-icon><Goods /></el-icon><span>库存管理</span></template>
           <el-menu-item index="/inventory">库存查询</el-menu-item>
           <el-menu-item index="/inventory/stock-count">库存盘点</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="reports">
+        <el-sub-menu v-if="menu.reports" index="reports">
           <template #title><el-icon><DataAnalysis /></el-icon><span>数据报表</span></template>
           <el-menu-item index="/reports">可视化报表</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="contract">
+        <el-sub-menu v-if="menu.contracts" index="contract">
           <template #title><el-icon><Document /></el-icon><span>合同管理</span></template>
           <el-menu-item index="/contract/purchase">采购合同</el-menu-item>
           <el-menu-item index="/contract/transport">运输合同</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="finance">
+        <el-sub-menu v-if="menu.finance" index="finance">
           <template #title><el-icon><Money /></el-icon><span>财务管理</span></template>
           <el-menu-item index="/finance/overview">财务概览</el-menu-item>
           <el-menu-item index="/finance/payable">应付账款</el-menu-item>
           <el-menu-item index="/finance/receivable">应收账款</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="collab">
+        <el-sub-menu v-if="menu.collab" index="collab">
           <template #title><el-icon><User /></el-icon><span>多人协作</span></template>
           <el-menu-item index="/collab/hall">协作大厅</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu v-if="isAdmin" index="teacher">
+        <el-sub-menu v-if="menu.teacher" index="teacher">
           <template #title><el-icon><Setting /></el-icon><span>教师后台</span></template>
           <el-menu-item index="/teacher/scenes">场景管理</el-menu-item>
           <el-menu-item index="/teacher/progress">进度监控</el-menu-item>
           <el-menu-item index="/teacher/events">事件注入</el-menu-item>
           <el-menu-item index="/teacher/scores">成绩统计</el-menu-item>
           <el-menu-item index="/teacher/logs">操作日志</el-menu-item>
+          <el-menu-item v-if="menu.users" index="/users">用户管理</el-menu-item>
         </el-sub-menu>
 
         <el-menu-item index="/alerts">
@@ -165,7 +166,15 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const activeMenu = computed(() => route.path)
-const isAdmin = computed(() => ['admin', 'teacher'].includes(authStore.user?.role_code))
+
+// 菜单权限（从 auth store 获取）
+const menu = computed(() => authStore.menuPermissions || {
+  suppliers: true, customers: true, goods: true, warehouses: true,
+  vehicles: true, drivers: true, purchase: true, transport: true,
+  warehouse: true, inventory: true, reports: true, contracts: true,
+  finance: true, collab: true, teacher: true, alerts: true,
+  help: true, users: true,
+})
 
 // 响应式：检测屏幕宽度
 const isMobile = ref(false)
