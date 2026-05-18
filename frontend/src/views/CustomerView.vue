@@ -1,6 +1,7 @@
 <template>
   <div class="customer-view">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>客户管理</span>
@@ -102,6 +103,15 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '客户管理操作指引', steps: [
+        "新建客户，填写基本信息",
+        "设置客户等级（VIP/普通/潜在）",
+        "编辑或管理客户"
+    ], tips: [
+        "客户等级影响业务优先级"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { customerAPI } from '../api/index'
 import { ElMessage, ElMessageBox } from 'element-plus'

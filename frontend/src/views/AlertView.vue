@@ -1,6 +1,7 @@
 <template>
   <div class="alert-view">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <h2>⚠️ 预警中心</h2>
@@ -158,6 +159,16 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '预警中心操作指引', steps: [
+        "查看各类预警信息",
+        "按类型筛选预警",
+        "及时处理预警事项"
+    ], tips: [
+        "六类预警：库存、有效期、应付、应收、运输超时、合同到期",
+        "预警数据实时更新"
+    ] }
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { alertAPI } from '../api/alert'

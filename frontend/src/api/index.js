@@ -140,7 +140,9 @@ export const eventAPI = {
 // ============ 操作日志 ============
 export const logAPI = {
   list: (params) => axios.get('/operation-logs', { params }),
-  getStats: (params) => axios.get('/operation-logs/stats', { params })
+  getStats: (params) => axios.get('/operation-logs/stats', { params }),
+  replay: (params) => axios.get('/operation-logs/replay', { params }),
+  getDetail: (id) => axios.get(`/operation-logs/${id}`)
 }
 
 // ============ 评分 ============

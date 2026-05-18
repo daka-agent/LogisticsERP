@@ -1,6 +1,7 @@
 <template>
   <div class="vehicle-view">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>车辆管理</span>
@@ -75,6 +76,15 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '车辆管理操作指引', steps: [
+        "新建车辆，填写车牌、类型等信息",
+        "编辑或停用车辆"
+    ], tips: [
+        "车辆状态：空闲/在途",
+        "调度时只能选择空闲车辆"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { vehicleAPI } from '../api/common'
 import { ElMessage, ElMessageBox } from 'element-plus'

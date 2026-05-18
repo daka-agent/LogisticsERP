@@ -1,6 +1,7 @@
 <template>
   <div v-loading="loading">
-    <el-page-header @back="$router.push('/transport/orders')" title="返回列表" style="margin-bottom:20px" />
+    <PageGuide v-bind="guideConfig" />
+<el-page-header @back="$router.push('/transport/orders')" title="返回列表" style="margin-bottom:20px" />
 
     <!-- 步骤条 -->
     <el-card style="margin-bottom:20px">
@@ -186,6 +187,16 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '运输订单详情操作指引', steps: [
+        "查看订单基本信息",
+        "查看运输记录",
+        "执行签收或查看POD"
+    ], tips: [
+        "签收后不可撤销",
+        "完成订单后自动计算运费和生成应收账款"
+    ] }
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { orderAPI, transportRecordAPI, exceptionAPI } from '../api/index'

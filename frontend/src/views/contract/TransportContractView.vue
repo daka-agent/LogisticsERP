@@ -1,6 +1,7 @@
 <template>
   <div class="transport-contract-view">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>运输合同管理</span>
@@ -127,6 +128,15 @@
 </template>
 
 <script setup>
+import PageGuide from '../../components/PageGuide.vue'
+
+const guideConfig = { title: '运输合同操作指引', steps: [
+        "创建运输合同",
+        "提交审批",
+        "审批通过后合同生效"
+    ], tips: [
+        "合同生效后可用于运输订单关联"
+    ] }
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { transportContractAPI } from '../../api/contract'

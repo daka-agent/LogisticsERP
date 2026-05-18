@@ -1,6 +1,7 @@
 <template>
   <div class="driver-view">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>司机管理</span>
@@ -68,6 +69,15 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '司机管理操作指引', steps: [
+        "新建司机，填写姓名、驾照信息",
+        "编辑或管理司机"
+    ], tips: [
+        "司机状态：可用/在途",
+        "调度时只能选择可用司机"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { driverAPI } from '../api/common'
 import { ElMessage, ElMessageBox } from 'element-plus'

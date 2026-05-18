@@ -1,6 +1,7 @@
 <template>
   <div>
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>运输订单管理</span>
@@ -98,6 +99,17 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '运输订单操作指引', steps: [
+        "创建运输订单",
+        "审核通过后调度车辆和司机",
+        "更新运输状态",
+        "到达后签收确认"
+    ], tips: [
+        "调度时请选择空闲状态的车辆和可用司机",
+        "签收后订单自动完成，车辆和司机释放"
+    ] }
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { orderAPI, customerAPI, vehicleAPI, driverAPI } from '../api/index'

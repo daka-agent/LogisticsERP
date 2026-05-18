@@ -51,6 +51,8 @@ const routes = [
       { path: 'teacher/logs', name: 'OperationLog', component: () => import('../views/teacher/OperationLogView.vue') },
       // 预警中心
       { path: 'alerts', name: 'Alerts', component: () => import('../views/AlertView.vue') },
+      // 帮助中心
+      { path: 'help', name: 'Help', component: () => import('../views/HelpView.vue') },
     ]
   }
 ]

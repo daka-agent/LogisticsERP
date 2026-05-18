@@ -1,6 +1,7 @@
 <template>
   <div class="finance-overview">
-    <el-row :gutter="20" class="stat-row">
+    <PageGuide v-bind="guideConfig" />
+<el-row :gutter="20" class="stat-row">
       <!-- 应付账款统计 -->
       <el-col :xs="12" :sm="6">
         <el-card shadow="hover" class="stat-card stat-red">
@@ -127,6 +128,15 @@
 </template>
 
 <script setup>
+import PageGuide from '../../components/PageGuide.vue'
+
+const guideConfig = { title: '财务概览操作指引', steps: [
+        "查看应付/应收账款汇总",
+        "查看财务统计图表"
+    ], tips: [
+        "应付账款基于已完成的采购订单自动生成",
+        "应收账款基于已完成的运输订单自动生成"
+    ] }
 import { ref, onMounted, computed } from 'vue'
 import { financeAPI } from '../../api/finance'
 

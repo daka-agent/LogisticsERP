@@ -1,6 +1,7 @@
 <template>
   <div class="accounts-payable">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>应付账款管理</span>
@@ -131,6 +132,15 @@
 </template>
 
 <script setup>
+import PageGuide from '../../components/PageGuide.vue'
+
+const guideConfig = { title: '应付账款操作指引', steps: [
+        "查看应付账款列表",
+        "点击详情进行付款操作"
+    ], tips: [
+        "应付账款由采购订单完成时自动生成",
+        "可多次部分付款"
+    ] }
 import { ref, onMounted } from 'vue'
 import { financeAPI } from '../../api/finance'
 import axios from 'axios'

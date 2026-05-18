@@ -1,6 +1,7 @@
 <template>
   <div class="accounts-receivable">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>应收账款管理</span>
@@ -131,6 +132,15 @@
 </template>
 
 <script setup>
+import PageGuide from '../../components/PageGuide.vue'
+
+const guideConfig = { title: '应收账款操作指引', steps: [
+        "查看应收账款列表",
+        "点击详情进行收款操作"
+    ], tips: [
+        "应收账款由运输订单完成时自动生成",
+        "可多次部分收款"
+    ] }
 import { ref, onMounted } from 'vue'
 import { financeAPI } from '../../api/finance'
 import axios from 'axios'

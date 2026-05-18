@@ -1,6 +1,7 @@
 <template>
   <div class="warehouse-view">
-    <!-- 仓库列表 -->
+    <PageGuide v-bind="guideConfig" />
+<!-- 仓库列表 -->
     <el-card>
       <template #header>
         <div class="card-header">
@@ -161,6 +162,16 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '仓库管理操作指引', steps: [
+        "先创建仓库",
+        "再在仓库下创建库区",
+        "最后在库区下创建货位"
+    ], tips: [
+        "必须按层级创建：仓库→库区→货位",
+        "删除上级会级联删除下级"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { warehouseAPI } from '../api/common'
 import { ElMessage, ElMessageBox } from 'element-plus'

@@ -1,6 +1,7 @@
 <template>
   <div class="goods-view">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>商品管理</span>
@@ -79,6 +80,14 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '商品管理操作指引', steps: [
+        "新建商品，填写名称、SKU、分类等",
+        "编辑或停用商品"
+    ], tips: [
+        "商品信息用于采购申请和库存管理"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { goodsAPI } from '../api/common'
 import { ElMessage, ElMessageBox } from 'element-plus'

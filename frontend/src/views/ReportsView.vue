@@ -1,6 +1,7 @@
 <template>
   <div class="reports-container">
-    <h2>数据可视化报表</h2>
+    <PageGuide v-bind="guideConfig" />
+<h2>数据可视化报表</h2>
 
     <!-- 总览卡片 -->
     <el-row :gutter="20" class="overview-cards">
@@ -62,6 +63,14 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '数据报表操作指引', steps: [
+        "查看四类可视化报表",
+        "分析业务数据趋势"
+    ], tips: [
+        "包含库存周转率、采购成本、运输准时率、仓库利用率"
+    ] }
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import axios from 'axios'
 import * as echarts from 'echarts'

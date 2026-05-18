@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="page-header">
+    <PageGuide v-bind="guideConfig" />
+<div class="page-header">
       <h2>入库管理</h2>
       <el-button type="primary" @click="showCreateDialog = true">新建入库单</el-button>
     </div>
@@ -142,6 +143,16 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '入库管理操作指引', steps: [
+        "创建入库单",
+        "选择货位进行上架",
+        "确认完成入库"
+    ], tips: [
+        "上架时需选择具体的仓库和货位",
+        "入库后库存自动增加"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { inboundAPI } from '../api'

@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="page-header">
+    <PageGuide v-bind="guideConfig" />
+<div class="page-header">
       <h2>库存管理</h2>
       <el-button type="success" @click="handleExport">导出数据</el-button>
     </div>
@@ -123,6 +124,16 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '库存查询操作指引', steps: [
+        "查看库存列表",
+        "按条件筛选商品",
+        "查看库存预警状态"
+    ], tips: [
+        "红色标识表示低于安全库存",
+        "可导出库存数据"
+    ] }
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { inventoryAPI, stockMoveAPI } from '../api'

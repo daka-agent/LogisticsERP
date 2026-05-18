@@ -95,6 +95,11 @@
           <el-icon><Bell /></el-icon>
           <template #title>⚠️ 预警中心</template>
         </el-menu-item>
+
+        <el-menu-item index="/help">
+          <el-icon><QuestionFilled /></el-icon>
+          <template #title>帮助中心</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -151,7 +156,7 @@ import { ElMessageBox } from 'element-plus'
 import {
   HomeFilled, Folder, ShoppingCart, Van, Box, Goods,
   User, Setting, DataAnalysis, Fold, Expand, Menu,
-  Money, Document, Bell
+  Money, Document, Bell, QuestionFilled
 } from '@element-plus/icons-vue'
 import { alertAPI } from '../api/alert'
 

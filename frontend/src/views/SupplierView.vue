@@ -1,6 +1,7 @@
 <template>
   <div class="supplier-view">
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>供应商管理</span>
@@ -48,6 +49,14 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '供应商管理操作指引', steps: [
+        "新建供应商，填写基本信息",
+        "编辑或停用供应商"
+    ], tips: [
+        "供应商信息用于采购订单关联"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { supplierAPI } from '../api/common'
 import { ElMessage, ElMessageBox } from 'element-plus'

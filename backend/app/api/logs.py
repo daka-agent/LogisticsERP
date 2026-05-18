@@ -97,6 +97,146 @@ def log_stats():
     }})
 
 
+@bp.route('/operation-logs/replay', methods=['GET'])
+@login_required
+def replay_logs():
+    """学生操作回放：返回某学生的完整操作时间线和统计"""
+    from sqlalchemy import func, distinct
+
+    user_id = request.args.get('user_id', type=int)
+    group_id = request.args.get('group_id', type=int)
+
+    if not user_id:
+        return jsonify({'code': 400, 'message': '请指定学生ID (user_id)'}), 400
+
+    # 基础查询
+    query = OperationLog.query.filter_by(user_id=user_id)
+    if group_id:
+        query = query.filter_by(group_id=group_id)
+
+    all_logs = query.order_by(OperationLog.created_at.asc()).all()
+
+    if not all_logs:
+        return jsonify({'code': 200, 'message': 'success', 'data': {
+            'user_id': user_id,
+            'total': 0,
+            'correct_count': 0,
+            'error_count': 0,
+            'accuracy_rate': 0,
+            'module_coverage': [],
+            'module_stats': [],
+            'timeline': []
+        }})
+
+    # 统计
+    total = len(all_logs)
+    correct_count = sum(1 for l in all_logs if l.is_correct)
+    error_count = total - correct_count
+    accuracy_rate = round(correct_count / total * 100, 1) if total > 0 else 0
+
+    # 模块覆盖
+    covered_modules = set(l.module for l in all_logs)
+    all_known_modules = [
+        'purchase_request', 'purchase_order', 'transport_order',
+        'inbound_order', 'outbound_order', 'stock_count',
+        'finance', 'contract', 'customer'
+    ]
+    module_coverage = [
+        {
+            'module': m,
+            'label': _module_label(m),
+            'covered': m in covered_modules,
+            'operation_count': sum(1 for l in all_logs if l.module == m)
+        }
+        for m in all_known_modules
+    ]
+
+    # 模块统计
+    module_stats_rows = db.session.query(
+        OperationLog.module, func.count(OperationLog.id),
+        func.sum(func.cast(OperationLog.is_correct, db.Integer))
+    ).filter_by(user_id=user_id)
+    if group_id:
+        module_stats_rows = module_stats_rows.filter_by(group_id=group_id)
+    module_stats_rows = module_stats_rows.group_by(OperationLog.module).all()
+
+    module_stats = [
+        {
+            'module': m,
+            'label': _module_label(m),
+            'count': c,
+            'correct': int(correct) if correct else 0
+        }
+        for m, c, correct in module_stats_rows
+    ]
+
+    # 时间线（按时间正序，包含详细数据）
+    timeline = [l.to_dict() for l in all_logs]
+
+    # 计算时间跨度
+    first_time = all_logs[0].created_at
+    last_time = all_logs[-1].created_at
+    duration_minutes = round(
+        (last_time - first_time).total_seconds() / 60, 1
+    ) if first_time and last_time else 0
+
+    # 耗时分析（按模块）
+    from collections import defaultdict
+    module_time = defaultdict(float)
+    for i, log in enumerate(all_logs):
+        if log.duration_ms:
+            module_time[log.module] += log.duration_ms / 1000  # 转为秒
+
+    time_analysis = [
+        {'module': _module_label(m), 'total_seconds': round(t, 1)}
+        for m, t in module_time.items()
+    ]
+
+    return jsonify({'code': 200, 'message': 'success', 'data': {
+        'user_id': user_id,
+        'user_name': all_logs[0].user.real_name if all_logs[0].user else None,
+        'total': total,
+        'correct_count': correct_count,
+        'error_count': error_count,
+        'accuracy_rate': accuracy_rate,
+        'module_coverage': module_coverage,
+        'module_stats': module_stats,
+        'timeline': timeline,
+        'time_span': {
+            'first': first_time.isoformat() if first_time else None,
+            'last': last_time.isoformat() if last_time else None,
+            'duration_minutes': duration_minutes
+        },
+        'time_analysis': time_analysis
+    }})
+
+
+@bp.route('/operation-logs/<int:log_id>', methods=['GET'])
+@login_required
+def get_log_detail(log_id):
+    """获取单条操作日志详情（含完整 request/response 数据）"""
+    log = OperationLog.query.get_or_404(log_id)
+    return jsonify({'code': 200, 'message': 'success', 'data': log.to_dict()})
+
+
+def _module_label(module):
+    """模块名中文映射"""
+    labels = {
+        'purchase_request': '采购申请',
+        'purchase_order': '采购订单',
+        'transport_order': '运输订单',
+        'inbound_order': '入库管理',
+        'outbound_order': '出库管理',
+        'stock_count': '库存盘点',
+        'finance': '财务管理',
+        'contract': '合同管理',
+        'customer': '客户管理',
+        'event_injection': '事件注入',
+        'transport_exception': '运输异常',
+    }
+    return labels.get(module, module)
+
+
 def log_operation(user_id, group_id, module, action, target_type=None, target_id=None,
                   description=None, request_data=None, response_data=None,
                   ip_address=None, duration_ms=None, is_correct=True):

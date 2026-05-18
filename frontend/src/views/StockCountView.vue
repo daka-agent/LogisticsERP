@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="page-header">
+    <PageGuide v-bind="guideConfig" />
+<div class="page-header">
       <h2>库存盘点</h2>
       <el-button type="primary" @click="showCreateDialog = true">新建盘点单</el-button>
     </div>
@@ -178,6 +179,16 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '库存盘点操作指引', steps: [
+        "创建盘点单",
+        "录入实际库存数量",
+        "确认差异并调整库存"
+    ], tips: [
+        "差异调整将直接修改库存数量",
+        "请认真核对实际数量"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { stockCountAPI } from '../api'

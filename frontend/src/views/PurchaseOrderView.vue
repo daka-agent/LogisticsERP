@@ -1,6 +1,7 @@
 <template>
   <div>
-    <el-card>
+    <PageGuide v-bind="guideConfig" />
+<el-card>
       <template #header>
         <div class="card-header">
           <span>采购订单管理</span>
@@ -98,6 +99,16 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '采购订单操作指引', steps: [
+        "创建采购订单，关联供应商和已通过的申请",
+        "确认订单信息",
+        "等待到货完成"
+    ], tips: [
+        "需先有已通过的采购申请才能创建订单",
+        "需选择供应商"
+    ] }
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { purchaseOrderAPI, purchaseRequestAPI, purchaseReceiptAPI, supplierAPI } from '../api/index'
 import { ElMessage, ElMessageBox } from 'element-plus'

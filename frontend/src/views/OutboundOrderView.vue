@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="page-header">
+    <PageGuide v-bind="guideConfig" />
+<div class="page-header">
       <h2>出库管理</h2>
       <el-button type="primary" @click="showCreateDialog = true">新建出库单</el-button>
     </div>
@@ -153,6 +154,16 @@
 </template>
 
 <script setup>
+import PageGuide from '../components/PageGuide.vue'
+
+const guideConfig = { title: '出库管理操作指引', steps: [
+        "创建出库单，选择库存商品",
+        "从指定货位拣货",
+        "确认发货完成"
+    ], tips: [
+        "拣货时需确保库存充足",
+        "出库后库存自动扣减"
+    ] }
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { outboundAPI } from '../api'
