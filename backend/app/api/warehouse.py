@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
+from sqlalchemy import func
 from app import db
 from app.models import OutboundOrder, OutboundItem, InboundOrder, InboundItem, Inventory, StockMove
 from app.models import Warehouse, Zone, Location, Goods
@@ -166,6 +167,23 @@ def shelve_inbound(id):
             )
             db.session.add(stock_move)
 
+            # 更新货位占用状态
+            if item.location_id:
+                location = Location.query.get(item.location_id)
+                if location and location.status == 'empty':
+                    location.status = 'occupied'
+
+    # 更新仓库已用货位数（基于实际库存数据）
+    warehouse = Warehouse.query.get(order.warehouse_id)
+    if warehouse:
+        used_count = db.session.query(
+            func.count(func.distinct(Inventory.location_id))
+        ).filter(
+            Inventory.warehouse_id == order.warehouse_id,
+            Inventory.quantity > 0
+        ).scalar() or 0
+        warehouse.used_locations = used_count
+
     db.session.commit()
 
     # 记录操作日志
@@ -329,6 +347,27 @@ def pick_outbound(id):
                 operator_id=current_user.id
             )
             db.session.add(stock_move)
+
+            # 检查货位是否还有库存，无库存则置为空闲
+            if item.location_id:
+                remaining = db.session.query(func.sum(Inventory.quantity)).filter(
+                    Inventory.location_id == item.location_id,
+                    Inventory.quantity > 0
+                ).scalar() or 0
+                location = Location.query.get(item.location_id)
+                if location and remaining == 0:
+                    location.status = 'empty'
+
+    # 更新仓库已用货位数（基于实际库存数据）
+    warehouse = Warehouse.query.get(order.warehouse_id)
+    if warehouse:
+        used_count = db.session.query(
+            func.count(func.distinct(Inventory.location_id))
+        ).filter(
+            Inventory.warehouse_id == order.warehouse_id,
+            Inventory.quantity > 0
+        ).scalar() or 0
+        warehouse.used_locations = used_count
 
     db.session.commit()
 
